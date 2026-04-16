@@ -21,15 +21,27 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { CalendarClock, LayoutDashboard, LogOut, PanelLeft, Scissors, Settings, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+type DashboardRole = "super_admin" | "barber_owner" | "barber_staff" | "client";
+
+type MenuItem = {
+  icon: typeof LayoutDashboard;
+  label: string;
+  path: string;
+  roles: DashboardRole[];
+};
+
+const menuItems: MenuItem[] = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: ["super_admin", "barber_owner", "barber_staff", "client"] },
+  { icon: CalendarClock, label: "Agenda", path: "/agenda", roles: ["super_admin", "barber_owner", "barber_staff", "client"] },
+  { icon: Scissors, label: "Serviços", path: "/servicos", roles: ["super_admin", "barber_owner", "barber_staff", "client"] },
+  { icon: Users, label: "Equipa", path: "/equipa", roles: ["super_admin", "barber_owner"] },
+  { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["super_admin", "barber_owner", "barber_staff"] },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -61,22 +73,24 @@ export default function DashboardLayout({
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
-            </h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-center">
+                Entrar para continuar
+              </h1>
+
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              O acesso a esta área requer autenticação. Continue para iniciar a sessão e entrar no painel da barbearia.
             </p>
           </div>
-          <Button
+              <Button
             onClick={() => {
               window.location.href = getLoginUrl();
             }}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"
           >
-            Sign in
+            Entrar com sessão Manus
           </Button>
+
         </div>
       </div>
     );
@@ -112,7 +126,8 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const roleAwareMenuItems = menuItems.filter((item) => user?.role ? item.roles.includes(user.role) : false);
+  const activeMenuItem = roleAwareMenuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -171,7 +186,7 @@ function DashboardLayoutContent({
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                    Barbearia Gestão
                   </span>
                 </div>
               ) : null}
@@ -180,7 +195,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {roleAwareMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -226,7 +241,7 @@ function DashboardLayoutContent({
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  <span>Terminar sessão</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
