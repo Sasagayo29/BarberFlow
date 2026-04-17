@@ -13,11 +13,17 @@ import {
   barberAvailabilityOverrides,
   barberProfiles,
   barberServices,
+  barbershops,
   businessHours,
+  createBarbershop,
+  getBarbershopById,
+  getBarbershopsByOwner,
   getDb,
   getUserByEmail,
   passwordResetTokens,
   services,
+  settings,
+  updateBarbershopStatus,
   users,
 } from "./db";
 
@@ -1050,6 +1056,57 @@ export const appRouter = router({
           })
           .where(eq(appointments.id, appointment.id));
 
+        return { success: true };
+      }),
+  }),
+
+  barbershops: router({
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(3).max(180),
+          description: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().email().optional(),
+          address: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        requireSuperAdmin(ctx.user);
+        const result = await createBarbershop({
+          name: input.name,
+          description: input.description,
+          phone: input.phone,
+          email: input.email,
+          address: input.address,
+          ownerUserId: ctx.user.id,
+          status: "active",
+        });
+        return result;
+      }),
+
+    list: protectedProcedure.query(async ({ ctx }) => {
+      requireSuperAdmin(ctx.user);
+      return await getBarbershopsByOwner(ctx.user.id);
+    }),
+
+    toggleStatus: protectedProcedure
+      .input(
+        z.object({
+          barbershopId: z.number(),
+          status: z.enum(["active", "inactive"]),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        requireSuperAdmin(ctx.user);
+        const barbershop = await getBarbershopById(input.barbershopId);
+        if (!barbershop) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia nao encontrada." });
+        }
+        if (barbershop.ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Voce nao tem permissao para modificar esta barbearia." });
+        }
+        await updateBarbershopStatus(input.barbershopId, input.status);
         return { success: true };
       }),
   }),

@@ -27,7 +27,7 @@ const initialForm: ServiceFormState = {
 };
 
 function formatMoney(value: number) {
-  return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(value);
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 export default function ServicesPage() {

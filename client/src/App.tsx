@@ -4,6 +4,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AgendaPage from "./pages/AgendaPage";
+import BarbershopsPage from "./pages/BarbershopsPage";
 import DashboardPage from "./pages/DashboardPage";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -39,6 +40,9 @@ function Router() {
       </Route>
       <Route path="/configuracoes">
         {() => <DashboardShell component={SettingsPage} />}
+      </Route>
+      <Route path="/barbearias">
+        {() => <DashboardShell component={BarbershopsPage} />}
       </Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

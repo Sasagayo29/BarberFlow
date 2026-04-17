@@ -17,7 +17,7 @@
 - [x] Implementar frontend responsivo com experiência distinta por perfil, incluindo login, área do cliente, agenda da equipa e área administrativa.
 - [x] Escrever testes automatizados para regras críticas de autorização, disponibilidade e agendamento.
 - [x] Validar o comportamento da aplicação no navegador e corrigir estados de erro, vazio e carregamento.
-- [ ] Criar checkpoint final do projeto após conclusão e validação.
+- [x] Criar checkpoint final do projeto após conclusão e validação.
 - [x] Implementar e evidenciar o fluxo completo de recuperação de senha, incluindo redefinição com token e respetivos testes.
 - [x] Adicionar e comprovar procedures e testes do dashboard para métricas administrativas e relatórios básicos.
 - [x] Escrever testes automatizados para disponibilidade, conflitos de horários, criação, reagendamento e cancelamento de agendamentos.
@@ -26,3 +26,19 @@
 - [x] Alinhar o escopo entregue do dashboard aos relatórios básicos implementados: resumo executivo, serviços mais utilizados e próximos atendimentos.
 - [x] Adicionar testes Vitest para disponibilidade e listagem de slots, criação bem-sucedida de agendamento e reagendamento, complementando os testes já existentes de conflito e cancelamento.
 - [x] Alinhar explicitamente o escopo final da gestão da equipa para arquivamento administrativo de utilizadores elegíveis, em vez de eliminação definitiva.
+
+## Novos Requisitos - Multi-Tenancy e Customização
+
+- [x] Criar tabela `barbershops` na base de dados com campos: id, name, status (ativo/inativo), owner_id, created_at, updated_at
+- [x] Adicionar coluna `barbershop_id` às tabelas existentes (users, services, appointments, business_hours, availability_overrides) para suportar multi-tenancy
+- [x] Implementar procedure backend para Super Admin criar novas barbearias
+- [x] Implementar procedure backend para Super Admin ativar/desativar barbearias
+- [ ] Implementar filtro de dados por barbershop_id em todas as queries do backend
+- [x] Atualizar frontend Home.tsx para exibir "Bem-vindo, [Nome do Utilizador]" em vez de "Bem-vindo, Utilizador"
+- [x] Criar UI do Super Admin para gestão de barbearias (criar, listar, ativar/desativar)
+- [x] Alterar formatação de moeda de EUR (€) para BRL (R$) em toda a aplicação
+- [x] Implementar sistema de customização global com tabela `settings` (theme, colors, company_name, currency, etc.)
+- [ ] Criar página de Configurações para permitir customização de temas, cores, textos e outros parâmetros
+- [ ] Testar fluxos de multi-tenancy com múltiplas barbearias
+- [ ] Validar personalização de mensagens e moeda em toda a aplicação
+- [x] Escrever testes Vitest para procedures de gestão de barbearias

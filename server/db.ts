@@ -5,10 +5,13 @@ import {
   barberAvailabilityOverrides,
   barberProfiles,
   barberServices,
+  barbershops,
   businessHours,
   InsertUser,
+  InsertBarbershop,
   passwordResetTokens,
   services,
+  settings,
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -96,13 +99,108 @@ export async function getUserByEmail(email: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function createBarbershop(
+  barbershop: InsertBarbershop
+): Promise<{ id: number }> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(barbershops).values(barbershop);
+  return { id: (result as any).insertId as number };
+}
+
+export async function getBarbershopById(id: number) {
+  const db = await getDb();
+  if (!db) {
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(barbershops)
+    .where(eq(barbershops.id, id))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getBarbershopsByOwner(ownerUserId: number) {
+  const db = await getDb();
+  if (!db) {
+    return [];
+  }
+
+  return await db
+    .select()
+    .from(barbershops)
+    .where(eq(barbershops.ownerUserId, ownerUserId));
+}
+
+export async function updateBarbershopStatus(
+  id: number,
+  status: "active" | "inactive"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .update(barbershops)
+    .set({ status })
+    .where(eq(barbershops.id, id));
+}
+
+export async function getSetting(key: string, barbershopId?: number) {
+  const db = await getDb();
+  if (!db) {
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, key))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function setSetting(
+  key: string,
+  value: string,
+  barbershopId?: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const existing = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, key))
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db
+      .update(settings)
+      .set({ value })
+      .where(eq(settings.key, key));
+  } else {
+    await db.insert(settings).values({ key, value, barbershopId });
+  }
+}
+
 export {
   appointments,
   barberAvailabilityOverrides,
   barberProfiles,
   barberServices,
+  barbershops,
   businessHours,
   passwordResetTokens,
   services,
+  settings,
   users,
 };

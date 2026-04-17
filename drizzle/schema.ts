@@ -22,6 +22,53 @@ export const userRoleEnum = mysqlEnum("role", [
 export const userStatusEnum = mysqlEnum("status", ["active", "inactive", "blocked"]);
 export const appointmentStatusEnum = mysqlEnum("status", ["pending", "confirmed", "completed", "cancelled", "no_show"]);
 export const availabilityTypeEnum = mysqlEnum("type", ["available", "unavailable"]);
+export const barbershopStatusEnum = mysqlEnum("barbershop_status", ["active", "inactive"]);
+
+/**
+ * Barbearias geridas pelo Super Admin.
+ * Suporta múltiplas barbearias independentes na mesma plataforma.
+ */
+export const barbershops = mysqlTable(
+  "barbershops",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    name: varchar("name", { length: 180 }).notNull(),
+    description: text("description"),
+    status: barbershopStatusEnum.default("active").notNull(),
+    ownerUserId: int("ownerUserId").notNull(),
+    phone: varchar("phone", { length: 32 }),
+    email: varchar("email", { length: 320 }),
+    address: text("address"),
+    logoUrl: text("logoUrl"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index("barbershops_status_idx").on(table.status),
+    ownerIdx: index("barbershops_owner_idx").on(table.ownerUserId),
+  }),
+);
+
+/**
+ * Configurações globais da aplicação e por barbearia.
+ * Permite customização de temas, moedas, textos e outros parâmetros.
+ */
+export const settings = mysqlTable(
+  "settings",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
+    key: varchar("key", { length: 100 }).notNull(),
+    value: text("value").notNull(),
+    description: text("description"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    keyIdx: index("settings_key_idx").on(table.key),
+    barbershopIdx: index("settings_barbershop_idx").on(table.barbershopId),
+  }),
+);
 
 /**
  * Utilizadores autenticáveis do sistema.
@@ -31,6 +78,7 @@ export const users = mysqlTable(
   "users",
   {
     id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
     openId: varchar("openId", { length: 64 }).unique(),
     name: varchar("name", { length: 180 }),
     phone: varchar("phone", { length: 32 }),
@@ -48,6 +96,7 @@ export const users = mysqlTable(
     emailUniqueIdx: uniqueIndex("users_email_unique_idx").on(table.email),
     roleIdx: index("users_role_idx").on(table.role),
     statusIdx: index("users_status_idx").on(table.status),
+    barbershopIdx: index("users_barbershop_idx").on(table.barbershopId),
   }),
 );
 
@@ -71,6 +120,7 @@ export const barberProfiles = mysqlTable(
   "barberProfiles",
   {
     id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
     userId: int("userId").notNull(),
     displayName: varchar("displayName", { length: 120 }).notNull(),
     specialty: varchar("specialty", { length: 160 }),
@@ -82,6 +132,7 @@ export const barberProfiles = mysqlTable(
   },
   (table) => ({
     userUniqueIdx: uniqueIndex("barber_profiles_user_unique_idx").on(table.userId),
+    barbershopIdx: index("barber_profiles_barbershop_idx").on(table.barbershopId),
   }),
 );
 
@@ -89,6 +140,7 @@ export const services = mysqlTable(
   "services",
   {
     id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
     name: varchar("name", { length: 140 }).notNull(),
     description: text("description"),
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
@@ -101,6 +153,7 @@ export const services = mysqlTable(
   (table) => ({
     activeIdx: index("services_active_idx").on(table.isActive),
     nameIdx: index("services_name_idx").on(table.name),
+    barbershopIdx: index("services_barbershop_idx").on(table.barbershopId),
   }),
 );
 
@@ -108,6 +161,7 @@ export const barberServices = mysqlTable(
   "barberServices",
   {
     id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
     barberUserId: int("barberUserId").notNull(),
     serviceId: int("serviceId").notNull(),
     customPrice: decimal("customPrice", { precision: 10, scale: 2 }),
@@ -119,6 +173,7 @@ export const barberServices = mysqlTable(
     barberServiceUniqueIdx: uniqueIndex("barber_services_unique_idx").on(table.barberUserId, table.serviceId),
     barberIdx: index("barber_services_barber_idx").on(table.barberUserId),
     serviceIdx: index("barber_services_service_idx").on(table.serviceId),
+    barbershopIdx: index("barber_services_barbershop_idx").on(table.barbershopId),
   }),
 );
 
@@ -126,6 +181,7 @@ export const businessHours = mysqlTable(
   "businessHours",
   {
     id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
     weekday: int("weekday").notNull(),
     startTime: varchar("startTime", { length: 5 }).notNull(),
     endTime: varchar("endTime", { length: 5 }).notNull(),
@@ -134,7 +190,8 @@ export const businessHours = mysqlTable(
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   (table) => ({
-    weekdayUniqueIdx: uniqueIndex("business_hours_weekday_unique_idx").on(table.weekday),
+    weekdayBarbershopUniqueIdx: uniqueIndex("business_hours_weekday_barbershop_unique_idx").on(table.barbershopId, table.weekday),
+    barbershopIdx: index("business_hours_barbershop_idx").on(table.barbershopId),
   }),
 );
 
@@ -142,6 +199,7 @@ export const barberAvailabilityOverrides = mysqlTable(
   "barberAvailabilityOverrides",
   {
     id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
     barberUserId: int("barberUserId").notNull(),
     type: availabilityTypeEnum.notNull(),
     startAt: bigint("startAt", { mode: "number" }).notNull(),
@@ -152,6 +210,7 @@ export const barberAvailabilityOverrides = mysqlTable(
   },
   (table) => ({
     barberStartIdx: index("barber_availability_barber_start_idx").on(table.barberUserId, table.startAt),
+    barbershopIdx: index("barber_availability_barbershop_idx").on(table.barbershopId),
   }),
 );
 
@@ -159,6 +218,7 @@ export const appointments = mysqlTable(
   "appointments",
   {
     id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId"),
     publicCode: varchar("publicCode", { length: 20 }).notNull(),
     clientUserId: int("clientUserId").notNull(),
     barberUserId: int("barberUserId").notNull(),
@@ -180,8 +240,15 @@ export const appointments = mysqlTable(
     barberTimeIdx: index("appointments_barber_time_idx").on(table.barberUserId, table.startsAt),
     clientTimeIdx: index("appointments_client_time_idx").on(table.clientUserId, table.startsAt),
     statusIdx: index("appointments_status_idx").on(table.status),
+    barbershopIdx: index("appointments_barbershop_idx").on(table.barbershopId),
   }),
 );
+
+export type Barbershop = typeof barbershops.$inferSelect;
+export type InsertBarbershop = typeof barbershops.$inferInsert;
+
+export type Setting = typeof settings.$inferSelect;
+export type InsertSetting = typeof settings.$inferInsert;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

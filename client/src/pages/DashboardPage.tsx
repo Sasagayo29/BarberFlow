@@ -28,9 +28,9 @@ const quickLinks = [
 ];
 
 function formatMoney(value: number) {
-  return new Intl.NumberFormat("pt-PT", {
+  return new Intl.NumberFormat("pt-BR", {
     style: "currency",
-    currency: "EUR",
+    currency: "BRL",
   }).format(value);
 }
 
