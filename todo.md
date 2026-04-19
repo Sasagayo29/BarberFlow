@@ -180,3 +180,23 @@ Todas as funcionalidades avançadas foram implementadas e testadas com sucesso:
 - ✅ Notificações do proprietário
 - ✅ 30 testes passando
 - ✅ Pronto para produção
+
+
+## Fase 17: Job Scheduler para Lembretes de Email
+
+- [x] Instalar node-cron para agendamento de jobs
+- [x] Criar job para verificar agendamentos 24h antes
+- [x] Implementar lógica de envio de emails de lembrete
+- [x] Adicionar logging de jobs executados
+- [x] Testar agendamento de lembretes
+
+## Fase 18: Dashboard de Clientes
+
+- [x] Criar página ClientDashboard.tsx
+- [x] Implementar layout com sidebar de navegação
+- [x] Adicionar seção de perfil do cliente
+- [x] Criar seção de histórico de agendamentos
+- [x] Criar seção de histórico de pagamentos
+- [x] Implementar filtros e busca
+- [x] Adicionar ações rápidas (reagendar, cancelar)
+- [x] Testar responsividade e acessibilidade

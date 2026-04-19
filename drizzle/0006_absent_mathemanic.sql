@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `reminderSent` tinyint DEFAULT 0 NOT NULL;

@@ -11,6 +11,7 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import ReportsPage from "./pages/ReportsPage";
 import DashboardPage from "./pages/DashboardPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
+import { ClientDashboard } from "./pages/ClientDashboard";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import ServicesPage from "./pages/ServicesPage";
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/relatorios">
         {() => <DashboardShell component={ReportsPage} />}
       </Route>
+      <Route path="/meu-painel" component={ClientDashboard} />
       <Route path="/checkout" component={CheckoutPage} />
       <Route path="/pagamento-confirmado" component={CheckoutPage} />
       <Route path="/pagamento-cancelado" component={CheckoutPage} />
