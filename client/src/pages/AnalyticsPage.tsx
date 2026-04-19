@@ -66,20 +66,15 @@ export default function AnalyticsPage() {
         </div>
         <Button
           onClick={() => {
-            const newData = {
-              date: new Date().toLocaleDateString('pt-BR'),
-              revenue: Math.floor(Math.random() * 1000) + 300,
-              appointments: Math.floor(Math.random() * 10) + 3,
-            };
-            const analytics = JSON.parse(localStorage.getItem('analytics') || '[]');
-            analytics.push(newData);
-            localStorage.setItem('analytics', JSON.stringify(analytics));
-            alert('Dados de analytics gerados com sucesso!');
-            window.location.reload();
+            if (confirm('Tem certeza que deseja limpar todos os dados de analytics?')) {
+              localStorage.removeItem('analytics');
+              alert('Dados de analytics limpos com sucesso!');
+              window.location.reload();
+            }
           }}
-          className="bg-green-600 hover:bg-green-700"
+          className="bg-red-600 hover:bg-red-700"
         >
-          + Gerar Analytics
+          🗑️ Limpar Analytics
         </Button>
       </div>
 
