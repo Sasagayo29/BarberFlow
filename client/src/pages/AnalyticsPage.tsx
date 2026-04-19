@@ -65,11 +65,15 @@ export default function AnalyticsPage() {
         ))}
         </div>
         <Button
-          onClick={() => {
+          onClick={async () => {
             if (confirm('Tem certeza que deseja limpar todos os dados de analytics?')) {
-              localStorage.removeItem('analytics');
-              alert('Dados de analytics limpos com sucesso!');
-              window.location.reload();
+              try {
+                // Aqui você chamaria a procedure real quando tiver barbershopId
+                // await trpc.analytics.clearAll.useMutation()
+                alert('Função de limpeza será implementada com integração real do banco');
+              } catch (error) {
+                alert('Erro ao limpar dados: ' + (error instanceof Error ? error.message : 'Desconhecido'));
+              }
             }
           }}
           className="bg-red-600 hover:bg-red-700"

@@ -341,3 +341,31 @@ export const payments = mysqlTable(
 
 export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = typeof payments.$inferInsert;
+
+/**
+ * Analytics - Dados de desempenho e métricas do negócio.
+ * Armazena eventos de agendamentos, receitas e métricas diárias.
+ */
+export const analytics = mysqlTable(
+  "analytics",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId").notNull(),
+    date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+    totalAppointments: int("totalAppointments").default(0).notNull(),
+    completedAppointments: int("completedAppointments").default(0).notNull(),
+    cancelledAppointments: int("cancelledAppointments").default(0).notNull(),
+    noShowAppointments: int("noShowAppointments").default(0).notNull(),
+    totalRevenue: decimal("totalRevenue", { precision: 10, scale: 2 }).default("0").notNull(),
+    averageTicket: decimal("averageTicket", { precision: 10, scale: 2 }).default("0").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    barbershopIdx: index("analytics_barbershop_idx").on(table.barbershopId),
+    dateIdx: index("analytics_date_idx").on(table.date),
+    barbershopDateUnique: uniqueIndex("analytics_barbershop_date_unique_idx").on(table.barbershopId, table.date),
+  }),
+);
+export type Analytics = typeof analytics.$inferSelect;
+export type InsertAnalytics = typeof analytics.$inferInsert;

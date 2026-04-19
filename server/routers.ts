@@ -8,6 +8,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { adminRouter } from "./routers/admin";
+import { analyticsRouter } from "./routers/analytics";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   appointments,
@@ -278,6 +279,7 @@ async function listAvailableSlots(
 export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
+  analytics: analyticsRouter,
 
   auth: router({
     me: publicProcedure.query(({ ctx }) => ctx.user),
