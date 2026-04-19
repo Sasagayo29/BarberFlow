@@ -97,28 +97,28 @@ Todas as funcionalidades foram implementadas, testadas e validadas com sucesso. 
 
 ## Fase 14: Integração Real com Stripe SDK
 
-- [ ] Implementar checkout real com stripe.checkout.sessions.create()
-- [ ] Criar webhook endpoint para payment_intent.succeeded
-- [ ] Persistir Stripe Customer ID no banco de dados
-- [ ] Atualizar status de pagamento via webhook
-- [ ] Implementar UI de checkout para clientes
-- [ ] Testar fluxo completo de pagamento
+- [x] Implementar checkout real com stripe.checkout.sessions.create()
+- [x] Criar webhook endpoint para payment_intent.succeeded
+- [x] Persistir Stripe Customer ID no banco de dados
+- [x] Atualizar status de pagamento via webhook
+- [x] Implementar UI de checkout para clientes
+- [x] Testar fluxo completo de pagamento
 
 ## Fase 15: Geração de PDF Real
 
-- [ ] Instalar biblioteca pdfkit ou html2pdf
-- [ ] Implementar geração de PDF para relatório de agendamentos
-- [ ] Implementar geração de PDF para relatório de receitas
-- [ ] Adicionar headers e footers aos PDFs
-- [ ] Testar download de PDFs
+- [x] Instalar biblioteca pdfkit ou html2pdf
+- [x] Implementar geração de PDF para relatório de agendamentos
+- [x] Implementar geração de PDF para relatório de receitas
+- [x] Adicionar headers e footers aos PDFs
+- [x] Testar download de PDFs
 
 ## Fase 16: Notificações por Email
 
-- [ ] Implementar envio de email de confirmação de agendamento
-- [ ] Implementar lembretes 24h antes do agendamento
-- [ ] Implementar notificação de cancelamento
-- [ ] Implementar templates de email customizáveis
-- [ ] Testar envio de emails
+- [x] Implementar envio de email de confirmação de agendamento
+- [x] Implementar lembretes 24h antes do agendamento
+- [x] Implementar notificação de cancelamento
+- [x] Implementar templates de email customizáveis
+- [x] Testar envio de emails
 
 ---
 
