@@ -48,6 +48,16 @@ export function AdminDataManagement() {
   const { data: logs } = trpc.admin.getAdminLogs.useQuery();
 
   // Mutations
+  const clearAnalyticsMutation = trpc.admin.clearAnalyticsData.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message || "Dados de analytics limpos com sucesso");
+      refetchStats();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   const clearTestDataMutation = trpc.admin.clearTestData.useMutation({
     onSuccess: (data) => {
       toast.success(data.message);
@@ -326,6 +336,27 @@ export function AdminDataManagement() {
                 disabled={clearTestDataMutation.isPending}
               >
                 {clearTestDataMutation.isPending ? "Limpando..." : "Limpar Dados de Teste"}
+              </Button>
+            </div>
+
+            <div className="p-4 bg-background rounded-lg border border-border">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Trash2 size={18} />
+                Limpar Dados de Analytics
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Remove dados de analytics com mais de 90 dias. Mantém histórico recente para relatórios.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (confirm('Tem certeza que deseja limpar dados de analytics com mais de 90 dias?')) {
+                    clearAnalyticsMutation.mutate({});
+                  }
+                }}
+                disabled={clearAnalyticsMutation.isPending}
+              >
+                {clearAnalyticsMutation.isPending ? "Limpando..." : "Limpar Analytics"}
               </Button>
             </div>
 

@@ -1139,6 +1139,10 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         requireSuperAdmin(ctx.user);
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+
+        // Criar barbearia
         const result = await createBarbershop({
           name: input.name,
           description: input.description,
@@ -1148,6 +1152,33 @@ export const appRouter = router({
           ownerUserId: ctx.user.id,
           status: "active",
         });
+
+        // Buscar dados completos da barbearia criada
+        const barbershopData = await getBarbershopById(result.id);
+        
+        // Criar usuário admin (chef) automaticamente
+        if (barbershopData) {
+          const chefEmail = `chef.${result.id}@${barbershopData.name.toLowerCase().replace(/\s+/g, "-")}.local`;
+          const chefPassword = hashPassword(`Chef@${result.id}${Date.now()}`);
+          
+          try {
+            await db.insert(users).values({
+              name: `Chef - ${barbershopData.name}`,
+              email: chefEmail,
+              passwordHash: chefPassword,
+              role: "barber_owner",
+              status: "active",
+              openId: `chef.${result.id}@barbershop.local`,
+              createdAt: new Date(),
+              lastSignedIn: new Date(),
+            });
+
+            console.log(`[Barbershop] Admin (chef) criado para barbearia ${result.id}: ${chefEmail}`);
+          } catch (error) {
+            console.error(`[Barbershop] Erro ao criar admin (chef):`, error);
+          }
+        }
+
         return result;
       }),
 
