@@ -925,8 +925,9 @@ export const appRouter = router({
           throw new TRPCError({ code: "CONFLICT", message: "O horário não está disponível para reserva." });
         }
 
+        const publicCode = nanoid(10).toUpperCase();
         await db.insert(appointments).values({
-          publicCode: nanoid(10).toUpperCase(),
+          publicCode,
           clientUserId: ctx.user.id,
           barberUserId: input.barberUserId,
           serviceId: input.serviceId,
@@ -936,6 +937,22 @@ export const appRouter = router({
           totalPrice: service.price.toFixed(2),
           notes: input.notes?.trim() ?? null,
         });
+
+        // Notificar proprietário sobre novo agendamento
+        try {
+          const { notifyOwnerAboutNewAppointment } = await import("./_core/emailNotification");
+          const appointmentDate = new Date(input.startsAt).toLocaleDateString("pt-BR");
+          const appointmentTime = new Date(input.startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          await notifyOwnerAboutNewAppointment(
+            "Barbearia",
+            ctx.user.name || "Cliente",
+            service.name,
+            appointmentDate,
+            appointmentTime
+          );
+        } catch (error) {
+          console.error("Erro ao notificar proprietário:", error);
+        }
 
         return { success: true };
       }),
