@@ -1358,6 +1358,34 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  payments: router({
+    createCheckoutSession: protectedProcedure
+      .input(
+        z.object({
+          appointmentId: z.number(),
+          amount: z.number().positive(),
+          description: z.string(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        
+        // Aqui você integraria com Stripe para criar uma sessão de checkout
+        // Por enquanto, retornamos um placeholder
+        return {
+          success: true,
+          checkoutUrl: "https://checkout.stripe.com/pay/placeholder",
+        };
+      }),
+
+    getPaymentHistory: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+      
+      // Retornar histórico de pagamentos do usuário
+      return [];
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -304,3 +304,39 @@ export const socialMediaSettings = mysqlTable(
 
 export type SocialMediaSetting = typeof socialMediaSettings.$inferSelect;
 export type InsertSocialMediaSetting = typeof socialMediaSettings.$inferInsert;
+
+
+/**
+ * Pagamentos de serviços via Stripe.
+ * Armazena apenas IDs essenciais do Stripe para referência.
+ */
+export const paymentStatusEnum = mysqlEnum("payment_status", ["pending", "completed", "failed", "refunded"]);
+
+export const payments = mysqlTable(
+  "payments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId").notNull(),
+    appointmentId: int("appointmentId").notNull(),
+    userId: int("userId").notNull(),
+    stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }).notNull().unique(),
+    stripeCustomerId: varchar("stripeCustomerId", { length: 255 }),
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).default("BRL").notNull(),
+    status: paymentStatusEnum.default("pending").notNull(),
+    description: text("description"),
+    metadata: text("metadata"), // JSON string com dados customizados
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    barbershopIdx: index("payments_barbershop_idx").on(table.barbershopId),
+    appointmentIdx: index("payments_appointment_idx").on(table.appointmentId),
+    userIdx: index("payments_user_idx").on(table.userId),
+    statusIdx: index("payments_status_idx").on(table.status),
+    stripePaymentIntentIdx: index("payments_stripe_payment_intent_idx").on(table.stripePaymentIntentId),
+  }),
+);
+
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;

@@ -36,6 +36,13 @@
       "when": 1776573158271,
       "tag": "0004_dear_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1776575055337,
+      "tag": "0005_fuzzy_leopardon",
+      "breakpoints": true
     }
   ]
 }

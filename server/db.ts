@@ -10,6 +10,7 @@ import {
   InsertUser,
   InsertBarbershop,
   passwordResetTokens,
+  payments,
   services,
   settings,
   socialMediaSettings,
@@ -215,6 +216,44 @@ export async function upsertSocialMediaSettings(barbershopId: number, data: any)
   }
 }
 
+export async function createPayment(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(payments).values(data);
+  return result;
+}
+
+export async function getPaymentByStripePaymentIntentId(stripePaymentIntentId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select()
+    .from(payments)
+    .where(eq(payments.stripePaymentIntentId, stripePaymentIntentId))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function updatePaymentStatus(id: number, status: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(payments)
+    .set({ status: status as any })
+    .where(eq(payments.id, id));
+}
+
+export async function getPaymentsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.select()
+    .from(payments)
+    .where(eq(payments.userId, userId));
+}
+
 export {
   appointments,
   barberAvailabilityOverrides,
@@ -223,6 +262,7 @@ export {
   barbershops,
   businessHours,
   passwordResetTokens,
+  payments,
   services,
   settings,
   socialMediaSettings,

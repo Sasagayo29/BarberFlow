@@ -87,7 +87,7 @@
 
 **Versão**: 1.0.0  
 **Data**: 19 de Abril de 2026  
-**Testes**: 22/22 passando ✅
+**Testes**: 30/30 passando ✅
 
 
 ## ✅ Fase 10: Funcionalidades de Agendamento para Clientes
@@ -120,3 +120,46 @@
 - [x] Implementar redirecionamento para TikTok
 - [x] Testar fluxos completos de integração
 - [x] Fazer checkpoint final com todas as funcionalidades
+
+
+## Fase 12: Integração com Stripe para Pagamentos
+
+- [x] Configurar chaves de API do Stripe (pública e secreta)
+- [x] Criar tabela `payments` no schema para armazenar transações
+- [x] Implementar procedure tRPC para criar sessão de pagamento Stripe
+- [ ] Implementar webhook para confirmar pagamento
+- [ ] Criar UI para pagamento de serviços no checkout
+- [ ] Implementar confirmação de pagamento com status
+- [ ] Testar fluxo completo de pagamento
+
+## Fase 13: Sistema de Notificações por Email
+
+- [ ] Configurar provedor de email (SendGrid ou similar)
+- [ ] Criar tabela `email_notifications` para histórico
+- [ ] Implementar envio de email de confirmação de agendamento
+- [ ] Implementar envio de email de lembretes (24h antes)
+- [ ] Implementar envio de email de cancelamento
+- [ ] Implementar envio de email de reagendamento
+- [ ] Adicionar templates de email customizáveis
+- [ ] Testar envio de emails
+
+## Fase 14: Dashboard de Analytics Avançado
+
+- [ ] Criar página de analytics com métricas principais
+- [ ] Implementar gráfico de receita por período
+- [ ] Implementar gráfico de agendamentos por dia/semana/mês
+- [ ] Implementar gráfico de barbeiros mais procurados
+- [ ] Implementar gráfico de serviços mais vendidos
+- [ ] Implementar filtros por período (hoje, semana, mês, ano)
+- [ ] Implementar comparação com período anterior
+- [ ] Testar visualizações e filtros
+
+## Fase 15: Relatórios PDF Exportáveis
+
+- [ ] Criar relatório de agendamentos em PDF
+- [ ] Criar relatório de receitas em PDF
+- [ ] Criar relatório de clientes em PDF
+- [ ] Implementar filtros de data para relatórios
+- [ ] Adicionar logo e branding da barbearia no PDF
+- [ ] Implementar download automático
+- [ ] Testar geração de PDFs
