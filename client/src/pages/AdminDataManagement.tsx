@@ -3,9 +3,9 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Trash2, Users, Database, RefreshCw, Lock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle, Trash2, Users, Database, RefreshCw, Scissors, Calendar } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,8 +43,8 @@ export function AdminDataManagement() {
   }
 
   // Queries
-  const { data: stats, isLoading: statsLoading } = trpc.admin.getStats.useQuery();
-  const { data: users, isLoading: usersLoading } = trpc.admin.listAllUsers.useQuery();
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.admin.getStats.useQuery();
+  const { data: users, isLoading: usersLoading, refetch: refetchUsers } = trpc.admin.listAllUsers.useQuery();
   const { data: logs } = trpc.admin.getAdminLogs.useQuery();
 
   // Mutations
@@ -53,6 +53,8 @@ export function AdminDataManagement() {
       toast.success(data.message);
       setShowClearDialog(false);
       setClearOptions({ clearAppointments: false, clearPayments: false, clearTestUsers: false });
+      refetchStats();
+      refetchUsers();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -62,6 +64,11 @@ export function AdminDataManagement() {
   const handleClearTestData = () => {
     clearTestDataMutation.mutate(clearOptions);
   };
+
+  // Filtrar usuários por tipo
+  const clients = users?.filter((u: any) => u.role === "client") || [];
+  const barbers = users?.filter((u: any) => u.role === "barber_staff" || u.role === "barber_owner") || [];
+  const admins = users?.filter((u: any) => u.role === "super_admin" || u.role === "barber_admin") || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,6 +125,183 @@ export function AdminDataManagement() {
           </Card>
         </div>
 
+        {/* Dados do Sistema */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database size={20} />
+              Dados do Sistema
+            </CardTitle>
+            <CardDescription>Visualize clientes, barbeiros, serviços e agendamentos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="clients" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="clients">
+                  <Users size={16} className="mr-2" />
+                  Clientes ({clients.length})
+                </TabsTrigger>
+                <TabsTrigger value="barbers">
+                  <Scissors size={16} className="mr-2" />
+                  Barbeiros ({barbers.length})
+                </TabsTrigger>
+                <TabsTrigger value="admins">
+                  <AlertCircle size={16} className="mr-2" />
+                  Admins ({admins.length})
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Clientes */}
+              <TabsContent value="clients" className="space-y-4">
+                {usersLoading ? (
+                  <p className="text-center text-muted-foreground py-8">Carregando clientes...</p>
+                ) : clients.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-3 px-4 font-semibold">Nome</th>
+                          <th className="text-left py-3 px-4 font-semibold">Email</th>
+                          <th className="text-left py-3 px-4 font-semibold">Telefone</th>
+                          <th className="text-left py-3 px-4 font-semibold">Status</th>
+                          <th className="text-left py-3 px-4 font-semibold">Cadastro</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {clients.map((u: any) => (
+                          <tr key={u.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-3 px-4 font-medium">{u.name}</td>
+                            <td className="py-3 px-4 text-muted-foreground">{u.email}</td>
+                            <td className="py-3 px-4 text-muted-foreground">{u.phone || "—"}</td>
+                            <td className="py-3 px-4">
+                              <Badge
+                                className={
+                                  u.status === "active"
+                                    ? "bg-green-100 text-green-800"
+                                    : u.status === "inactive"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                }
+                              >
+                                {u.status}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground">
+                              {new Date(u.createdAt).toLocaleDateString("pt-BR")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Nenhum cliente encontrado</p>
+                )}
+              </TabsContent>
+
+              {/* Barbeiros */}
+              <TabsContent value="barbers" className="space-y-4">
+                {usersLoading ? (
+                  <p className="text-center text-muted-foreground py-8">Carregando barbeiros...</p>
+                ) : barbers.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-3 px-4 font-semibold">Nome</th>
+                          <th className="text-left py-3 px-4 font-semibold">Email</th>
+                          <th className="text-left py-3 px-4 font-semibold">Papel</th>
+                          <th className="text-left py-3 px-4 font-semibold">Status</th>
+                          <th className="text-left py-3 px-4 font-semibold">Cadastro</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {barbers.map((u: any) => (
+                          <tr key={u.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-3 px-4 font-medium">{u.name}</td>
+                            <td className="py-3 px-4 text-muted-foreground">{u.email}</td>
+                            <td className="py-3 px-4">
+                              <Badge variant="outline">{u.role === "barber_owner" ? "Barbeiro Chef" : "Barbeiro"}</Badge>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge
+                                className={
+                                  u.status === "active"
+                                    ? "bg-green-100 text-green-800"
+                                    : u.status === "inactive"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                }
+                              >
+                                {u.status}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground">
+                              {new Date(u.createdAt).toLocaleDateString("pt-BR")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Nenhum barbeiro encontrado</p>
+                )}
+              </TabsContent>
+
+              {/* Admins */}
+              <TabsContent value="admins" className="space-y-4">
+                {usersLoading ? (
+                  <p className="text-center text-muted-foreground py-8">Carregando admins...</p>
+                ) : admins.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-3 px-4 font-semibold">Nome</th>
+                          <th className="text-left py-3 px-4 font-semibold">Email</th>
+                          <th className="text-left py-3 px-4 font-semibold">Papel</th>
+                          <th className="text-left py-3 px-4 font-semibold">Status</th>
+                          <th className="text-left py-3 px-4 font-semibold">Último Acesso</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {admins.map((u: any) => (
+                          <tr key={u.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-3 px-4 font-medium">{u.name}</td>
+                            <td className="py-3 px-4 text-muted-foreground">{u.email}</td>
+                            <td className="py-3 px-4">
+                              <Badge variant="secondary">{u.role === "super_admin" ? "Super Admin" : "Admin"}</Badge>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge
+                                className={
+                                  u.status === "active"
+                                    ? "bg-green-100 text-green-800"
+                                    : u.status === "inactive"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                }
+                              >
+                                {u.status}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground">
+                              {u.lastSignedIn ? new Date(u.lastSignedIn).toLocaleDateString("pt-BR") : "Nunca"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Nenhum admin encontrado</p>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
         {/* Ações Administrativas */}
         <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
           <CardHeader>
@@ -157,91 +341,6 @@ export function AdminDataManagement() {
                 Sincronizar (Em breve)
               </Button>
             </div>
-
-            <div className="p-4 bg-background rounded-lg border border-border">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Database size={18} />
-                Backup de Dados
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Crie um backup dos dados antes de operações destrutivas.
-              </p>
-              <Button variant="outline" onClick={() => toast.info("Backup criado com sucesso em " + new Date().toLocaleString("pt-BR"))}>
-                Criar Backup Agora
-              </Button>
-            </div>
-
-            <div className="p-4 bg-background rounded-lg border border-border">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Trash2 size={18} />
-                Limpar Analytics
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Remove agendamentos e pagamentos com mais de 90 dias.
-              </p>
-              <Button variant="outline" onClick={() => toast.info("Analytics limpo com sucesso")}>
-                Limpar Analytics Antigos
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Usuários */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users size={20} />
-              Usuários do Sistema
-            </CardTitle>
-            <CardDescription>Total: {users?.length || 0} usuários</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {usersLoading ? (
-              <p className="text-center text-muted-foreground py-8">Carregando usuários...</p>
-            ) : users && users.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-semibold">Nome</th>
-                      <th className="text-left py-3 px-4 font-semibold">Email</th>
-                      <th className="text-left py-3 px-4 font-semibold">Papel</th>
-                      <th className="text-left py-3 px-4 font-semibold">Status</th>
-                      <th className="text-left py-3 px-4 font-semibold">Último Acesso</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u: any) => (
-                      <tr key={u.id} className="border-b border-border hover:bg-accent/50">
-                        <td className="py-3 px-4">{u.name}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{u.email}</td>
-                        <td className="py-3 px-4">
-                          <Badge variant="outline">{u.role}</Badge>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge
-                            className={
-                              u.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : u.status === "inactive"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                            }
-                          >
-                            {u.status}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-muted-foreground">
-                          {u.lastSignedIn ? new Date(u.lastSignedIn).toLocaleDateString("pt-BR") : "Nunca"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</p>
-            )}
           </CardContent>
         </Card>
 
@@ -249,7 +348,7 @@ export function AdminDataManagement() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Database size={20} />
+              <Calendar size={20} />
               Logs de Ações Administrativas
             </CardTitle>
           </CardHeader>
