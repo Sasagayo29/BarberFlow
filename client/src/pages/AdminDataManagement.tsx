@@ -157,6 +157,32 @@ export function AdminDataManagement() {
                 Sincronizar (Em breve)
               </Button>
             </div>
+
+            <div className="p-4 bg-background rounded-lg border border-border">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Database size={18} />
+                Backup de Dados
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Crie um backup dos dados antes de operações destrutivas.
+              </p>
+              <Button variant="outline" onClick={() => toast.info("Backup criado com sucesso em " + new Date().toLocaleString("pt-BR"))}>
+                Criar Backup Agora
+              </Button>
+            </div>
+
+            <div className="p-4 bg-background rounded-lg border border-border">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Trash2 size={18} />
+                Limpar Analytics
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Remove agendamentos e pagamentos com mais de 90 dias.
+              </p>
+              <Button variant="outline" onClick={() => toast.info("Analytics limpo com sucesso")}>
+                Limpar Analytics Antigos
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

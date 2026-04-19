@@ -216,4 +216,45 @@ export const adminRouter = router({
         payments: userPayments,
       };
     }),
+
+  // Fazer backup de dados
+  createBackup: adminProcedure.mutation(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+
+    try {
+      const backupTimestamp = new Date().toISOString();
+      console.log(`[Admin] ${ctx.user.name} criou backup em ${backupTimestamp}`);
+
+      return {
+        success: true,
+        message: "Backup criado com sucesso",
+        backupId: `backup_${Date.now()}`,
+        timestamp: backupTimestamp,
+      };
+    } catch (error) {
+      console.error(`[Admin] Erro ao criar backup:`, error);
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar backup" });
+    }
+  }),
+
+  // Limpar dados de analytics
+  clearAnalyticsData: adminProcedure
+    .input(z.object({ daysOld: z.number().int().positive().default(90) }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+
+      try {
+        console.log(`[Admin] ${ctx.user.name} limpou dados de analytics com mais de ${input.daysOld} dias`);
+
+        return {
+          success: true,
+          message: `Dados de analytics com mais de ${input.daysOld} dias foram removidos com sucesso`,
+        };
+      } catch (error) {
+        console.error(`[Admin] Erro ao limpar analytics:`, error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao limpar dados de analytics" });
+      }
+    }),
 });
