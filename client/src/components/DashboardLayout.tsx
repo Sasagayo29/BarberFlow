@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Building2, CalendarClock, LayoutDashboard, LogOut, PanelLeft, Scissors, Settings, Users, User, Share2, BarChart3 } from "lucide-react";
+import { Building2, CalendarClock, LayoutDashboard, LogOut, PanelLeft, Scissors, Settings, Users, User, Share2, BarChart3, FileText } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -45,6 +45,7 @@ const menuItems: MenuItem[] = [
   { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["super_admin", "barber_owner", "barber_staff"] },
   { icon: Share2, label: "Redes Sociais", path: "/redes-sociais", roles: ["super_admin", "barber_owner"] },
   { icon: BarChart3, label: "Analytics", path: "/analytics", roles: ["super_admin", "barber_owner"] },
+  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["super_admin", "barber_owner"] },
   { icon: User, label: "Meu Perfil", path: "/perfil", roles: ["super_admin", "barber_admin", "barber_owner", "barber_staff", "client"] },
 ];
 

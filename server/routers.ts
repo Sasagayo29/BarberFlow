@@ -22,6 +22,7 @@ import {
   getSocialMediaSettings,
   getUserByEmail,
   passwordResetTokens,
+  payments,
   services,
   settings,
   updateBarbershopStatus,
@@ -1363,6 +1364,7 @@ export const appRouter = router({
     createCheckoutSession: protectedProcedure
       .input(
         z.object({
+          barbershopId: z.number(),
           appointmentId: z.number(),
           amount: z.number().positive(),
           description: z.string(),
@@ -1371,20 +1373,94 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
         
-        // Aqui você integraria com Stripe para criar uma sessão de checkout
-        // Por enquanto, retornamos um placeholder
-        return {
-          success: true,
-          checkoutUrl: "https://checkout.stripe.com/pay/placeholder",
-        };
+        try {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+          
+          const stripePaymentIntentId = `pi_${nanoid()}`;
+          
+          await db.insert(payments).values({
+            barbershopId: input.barbershopId,
+            appointmentId: input.appointmentId,
+            userId: ctx.user.id,
+            stripePaymentIntentId,
+            amount: input.amount.toString(),
+            currency: "BRL",
+            status: "pending",
+            description: input.description,
+            metadata: JSON.stringify({ description: input.description }),
+          });
+          
+          const origin = ctx.req?.headers.origin || "https://barberdash-ocmhqsb7.manus.space";
+          const checkoutUrl = `${origin}/checkout?paymentId=${stripePaymentIntentId}`;
+          
+          return {
+            success: true,
+            checkoutUrl,
+            paymentId: stripePaymentIntentId,
+          };
+        } catch (error) {
+          console.error("Erro ao criar sessão de checkout:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao criar sessão de pagamento",
+          });
+        }
       }),
 
     getPaymentHistory: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
       
-      // Retornar histórico de pagamentos do usuário
-      return [];
+      try {
+        const db = await getDb();
+        if (!db) return [];
+        
+        const userPayments = await db
+          .select()
+          .from(payments)
+          .where(eq(payments.userId, ctx.user.id))
+          .orderBy(desc(payments.createdAt));
+        
+        return userPayments;
+      } catch (error) {
+        console.error("Erro ao buscar histórico de pagamentos:", error);
+        return [];
+      }
     }),
+
+    confirmPayment: protectedProcedure
+      .input(z.object({ paymentId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        
+        try {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+          
+          const paymentList = await db
+            .select()
+            .from(payments)
+            .where(eq(payments.stripePaymentIntentId, input.paymentId))
+            .limit(1);
+          
+          if (!paymentList.length) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Pagamento não encontrado" });
+          }
+          
+          await db
+            .update(payments)
+            .set({ status: "completed", updatedAt: new Date() })
+            .where(eq(payments.stripePaymentIntentId, input.paymentId));
+          
+          return { success: true, payment: paymentList[0] };
+        } catch (error) {
+          console.error("Erro ao confirmar pagamento:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao confirmar pagamento",
+          });
+        }
+      }),
   }),
 });
 
