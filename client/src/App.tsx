@@ -7,6 +7,7 @@ import AgendaPage from "./pages/AgendaPage";
 import BarbershopsPage from "./pages/BarbershopsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SocialMediaPage from "./pages/SocialMediaPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import DashboardPage from "./pages/DashboardPage";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
@@ -51,6 +52,9 @@ function Router() {
       </Route>
       <Route path="/redes-sociais">
         {() => <DashboardShell component={SocialMediaPage} />}
+      </Route>
+      <Route path="/analytics">
+        {() => <DashboardShell component={AnalyticsPage} />}
       </Route>
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
