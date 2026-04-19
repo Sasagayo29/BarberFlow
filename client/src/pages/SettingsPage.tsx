@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useMemo, useState } from "react";
 
 const weekdayLabels = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -26,12 +26,34 @@ type AvailabilityFormState = {
   reason: string;
 };
 
+type CustomizationFormState = {
+  companyName: string;
+  companyPhone: string;
+  companyEmail: string;
+  companyAddress: string;
+  theme: "dark" | "light";
+  primaryColor: string;
+  secondaryColor: string;
+  welcomeMessage: string;
+};
+
 const initialAvailabilityForm: AvailabilityFormState = {
   barberUserId: "",
   type: "unavailable",
   startAt: "",
   endAt: "",
   reason: "",
+};
+
+const initialCustomizationForm: CustomizationFormState = {
+  companyName: "",
+  companyPhone: "",
+  companyEmail: "",
+  companyAddress: "",
+  theme: "dark",
+  primaryColor: "#d4af37",
+  secondaryColor: "#785c3f",
+  welcomeMessage: "Bem-vindo à nossa barbearia",
 };
 
 function toDateTimeLocalInput(value: number) {
@@ -50,6 +72,7 @@ export default function SettingsPage() {
   const utils = trpc.useUtils();
   const canManageGlobalHours = user?.role === "super_admin" || user?.role === "barber_owner";
   const canManageAvailability = user?.role !== undefined && user.role !== "client";
+  const canManageCustomization = user?.role === "super_admin" || user?.role === "barber_owner";
 
   const hoursQuery = trpc.settings.businessHours.list.useQuery(undefined, { retry: false });
   const teamQuery = trpc.users.list.useQuery(undefined, { enabled: canManageGlobalHours, retry: false });
@@ -78,6 +101,7 @@ export default function SettingsPage() {
     ...initialAvailabilityForm,
     barberUserId: user?.role === "barber_owner" || user?.role === "barber_staff" ? String(user.id) : "",
   });
+  const [customizationForm, setCustomizationForm] = useState<CustomizationFormState>(initialCustomizationForm);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const effectiveBarberId = Number(selectedBarberId || availabilityForm.barberUserId || 0);
@@ -174,6 +198,30 @@ export default function SettingsPage() {
     });
   }
 
+  const customizationMutation = trpc.settings.customization.set.useMutation({
+    onSuccess: async () => {
+      setFeedback("Customização salva com sucesso!");
+      await utils.settings.customization.get.invalidate();
+    },
+    onError: (error) => setFeedback(error.message),
+  });
+
+  function saveCustomization() {
+    if (!customizationForm.companyName.trim()) {
+      setFeedback("Nome da empresa é obrigatório.");
+      return;
+    }
+
+    customizationMutation.mutate({ key: "companyName", value: customizationForm.companyName });
+    customizationMutation.mutate({ key: "companyPhone", value: customizationForm.companyPhone });
+    customizationMutation.mutate({ key: "companyEmail", value: customizationForm.companyEmail });
+    customizationMutation.mutate({ key: "companyAddress", value: customizationForm.companyAddress });
+    customizationMutation.mutate({ key: "theme", value: customizationForm.theme });
+    customizationMutation.mutate({ key: "primaryColor", value: customizationForm.primaryColor });
+    customizationMutation.mutate({ key: "secondaryColor", value: customizationForm.secondaryColor });
+    customizationMutation.mutate({ key: "welcomeMessage", value: customizationForm.welcomeMessage });
+  }
+
   return (
     <div className="space-y-8">
       <section>
@@ -190,6 +238,137 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
+      {canManageCustomization && (
+        <Card className="border-white/10 bg-[#14110f] text-white">
+          <CardHeader>
+            <CardTitle>Customização da barbearia</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Personalize o nome, contactos, tema e mensagens da sua barbearia.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="company-name">Nome da empresa</Label>
+                <Input
+                  id="company-name"
+                  value={customizationForm.companyName}
+                  onChange={(e) => setCustomizationForm((current) => ({ ...current, companyName: e.target.value }))}
+                  placeholder="Ex: Barbearia Central"
+                  className="h-10 rounded-lg border-white/10 bg-black/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company-phone">Telefone</Label>
+                <Input
+                  id="company-phone"
+                  value={customizationForm.companyPhone}
+                  onChange={(e) => setCustomizationForm((current) => ({ ...current, companyPhone: e.target.value }))}
+                  placeholder="(11) 99999-9999"
+                  className="h-10 rounded-lg border-white/10 bg-black/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company-email">E-mail</Label>
+                <Input
+                  id="company-email"
+                  type="email"
+                  value={customizationForm.companyEmail}
+                  onChange={(e) => setCustomizationForm((current) => ({ ...current, companyEmail: e.target.value }))}
+                  placeholder="contato@barbearia.com"
+                  className="h-10 rounded-lg border-white/10 bg-black/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company-address">Endereço</Label>
+                <Input
+                  id="company-address"
+                  value={customizationForm.companyAddress}
+                  onChange={(e) => setCustomizationForm((current) => ({ ...current, companyAddress: e.target.value }))}
+                  placeholder="Rua Principal, 123"
+                  className="h-10 rounded-lg border-white/10 bg-black/20"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="theme">Tema</Label>
+                <select
+                  id="theme"
+                  value={customizationForm.theme}
+                  onChange={(e) => setCustomizationForm((current) => ({ ...current, theme: e.target.value as "dark" | "light" }))}
+                  className="h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-white"
+                >
+                  <option value="dark">Escuro</option>
+                  <option value="light">Claro</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="primary-color">Cor primária</Label>
+                <div className="flex gap-2">
+                  <input
+                    id="primary-color"
+                    type="color"
+                    value={customizationForm.primaryColor}
+                    onChange={(e) => setCustomizationForm((current) => ({ ...current, primaryColor: e.target.value }))}
+                    className="h-10 w-16 rounded-lg border border-white/10 cursor-pointer"
+                  />
+                  <Input
+                    value={customizationForm.primaryColor}
+                    onChange={(e) => setCustomizationForm((current) => ({ ...current, primaryColor: e.target.value }))}
+                    placeholder="#d4af37"
+                    className="h-10 flex-1 rounded-lg border-white/10 bg-black/20"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="secondary-color">Cor secundária</Label>
+                <div className="flex gap-2">
+                  <input
+                    id="secondary-color"
+                    type="color"
+                    value={customizationForm.secondaryColor}
+                    onChange={(e) => setCustomizationForm((current) => ({ ...current, secondaryColor: e.target.value }))}
+                    className="h-10 w-16 rounded-lg border border-white/10 cursor-pointer"
+                  />
+                  <Input
+                    value={customizationForm.secondaryColor}
+                    onChange={(e) => setCustomizationForm((current) => ({ ...current, secondaryColor: e.target.value }))}
+                    placeholder="#785c3f"
+                    className="h-10 flex-1 rounded-lg border-white/10 bg-black/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="welcome-message">Mensagem de boas-vindas</Label>
+              <Textarea
+                id="welcome-message"
+                value={customizationForm.welcomeMessage}
+                onChange={(e) => setCustomizationForm((current) => ({ ...current, welcomeMessage: e.target.value }))}
+                placeholder="Bem-vindo à nossa barbearia"
+                className="rounded-lg border-white/10 bg-black/20"
+                rows={3}
+              />
+            </div>
+
+            <Button
+              onClick={saveCustomization}
+              className="w-full rounded-lg bg-amber-300 text-stone-950 hover:bg-amber-200"
+            >
+              Salvar customização
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-white/10 bg-[#14110f] text-white">
         <CardHeader>
           <CardTitle>Horário da barbearia</CardTitle>
@@ -198,212 +377,154 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {!canManageGlobalHours ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-6 text-sm text-zinc-400">
-              Apenas perfis de gestão podem alterar o horário global da barbearia.
+          {hours.map((hour) => (
+            <div key={hour.weekday} className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
+              <div className="flex-1">
+                <p className="font-medium text-white">{hour.label}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={getHourDraft(hour.weekday, hour).isOpen}
+                  onChange={(e) => updateHourDraft(hour.weekday, { isOpen: e.target.checked }, hour)}
+                  className="h-4 w-4 rounded border-white/10 bg-black/20"
+                />
+                <span className="text-sm text-zinc-400">Aberto</span>
+              </div>
+              {getHourDraft(hour.weekday, hour).isOpen && (
+                <>
+                  <Input
+                    type="time"
+                    value={getHourDraft(hour.weekday, hour).startTime}
+                    onChange={(e) => updateHourDraft(hour.weekday, { startTime: e.target.value }, hour)}
+                    className="h-10 w-24 rounded-lg border-white/10 bg-black/20"
+                  />
+                  <span className="text-zinc-400">até</span>
+                  <Input
+                    type="time"
+                    value={getHourDraft(hour.weekday, hour).endTime}
+                    onChange={(e) => updateHourDraft(hour.weekday, { endTime: e.target.value }, hour)}
+                    className="h-10 w-24 rounded-lg border-white/10 bg-black/20"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => saveBusinessHour(hour.weekday, hour)}
+                    disabled={upsertHoursMutation.isPending}
+                    className="rounded-lg bg-amber-300 text-stone-950 hover:bg-amber-200"
+                  >
+                    Guardar
+                  </Button>
+                </>
+              )}
             </div>
-          ) : hoursQuery.isLoading ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-zinc-400">
-              A carregar a configuração semanal de funcionamento da barbearia.
-            </div>
-          ) : hoursQuery.error ? (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-sm text-red-100">
-              Não foi possível carregar os horários de funcionamento neste momento. Tente novamente dentro de instantes.
-            </div>
-          ) : (
-            hours.map((item) => {
-              const draft = getHourDraft(item.weekday, item);
-              return (
-                <div key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr_1fr_auto] lg:items-end">
-                    <div>
-                      <p className="font-medium text-white">{item.label ?? weekdayLabels[item.weekday] ?? `Dia ${item.weekday}`}</p>
-                      <p className="mt-1 text-sm text-zinc-400">Base operacional da agenda e das janelas de reserva.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`start-${item.weekday}`}>Abertura</Label>
-                      <Input
-                        id={`start-${item.weekday}`}
-                        type="time"
-                        value={draft.startTime}
-                        onChange={(event) => updateHourDraft(item.weekday, { startTime: event.target.value }, item)}
-                        className="h-12 rounded-2xl border-white/10 bg-black/20"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`end-${item.weekday}`}>Fecho</Label>
-                      <Input
-                        id={`end-${item.weekday}`}
-                        type="time"
-                        value={draft.endTime}
-                        onChange={(event) => updateHourDraft(item.weekday, { endTime: event.target.value }, item)}
-                        className="h-12 rounded-2xl border-white/10 bg-black/20"
-                      />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={`rounded-2xl border-white/10 ${draft.isOpen ? "text-emerald-200 hover:bg-emerald-500/10" : "text-zinc-300 hover:bg-white/10"}`}
-                        onClick={() => updateHourDraft(item.weekday, { isOpen: !draft.isOpen }, item)}
-                      >
-                        {draft.isOpen ? "Aberto" : "Encerrado"}
-                      </Button>
-                      <Button
-                        type="button"
-                        className="rounded-2xl bg-amber-300 text-stone-950 hover:bg-amber-200"
-                        onClick={() => saveBusinessHour(item.weekday, item)}
-                        disabled={upsertHoursMutation.isPending}
-                      >
-                        Guardar
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
+          ))}
         </CardContent>
       </Card>
 
-      <Card className="border-white/10 bg-[#14110f] text-white">
-        <CardHeader>
-          <CardTitle>Disponibilidade individual</CardTitle>
-          <CardDescription className="text-zinc-400">
-            Registe exceções por barbeiro para reforçar bloqueios automáticos, folgas, janelas extra ou disponibilidade especial.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {!canManageAvailability ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-6 text-sm text-zinc-400">
-              A disponibilidade individual só pode ser gerida por barbeiros ou perfis de gestão.
-            </div>
-          ) : (
-            <>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                <div className="space-y-2 xl:col-span-1">
-                  <Label htmlFor="availability-barber">Barbeiro</Label>
-                  <select
-                    id="availability-barber"
-                    value={availabilityForm.barberUserId}
-                    onChange={(event) => {
-                      setAvailabilityForm((current) => ({ ...current, barberUserId: event.target.value }));
-                      setSelectedBarberId(event.target.value);
-                    }}
-                    className="h-12 w-full rounded-2xl border border-white/10 bg-black/20 px-3 text-sm text-white"
-                  >
-                    <option value="" className="bg-[#14110f] text-white">Selecionar barbeiro</option>
-                    {barberOptions.map((barber) => (
-                      <option key={barber.id} value={barber.id} className="bg-[#14110f] text-white">
-                        {barber.name ?? `Barbeiro #${barber.id}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="availability-type">Tipo</Label>
-                  <select
-                    id="availability-type"
-                    value={availabilityForm.type}
-                    onChange={(event) => setAvailabilityForm((current) => ({ ...current, type: event.target.value as "available" | "unavailable" }))}
-                    className="h-12 w-full rounded-2xl border border-white/10 bg-black/20 px-3 text-sm text-white"
-                  >
-                    <option value="unavailable" className="bg-[#14110f] text-white">Indisponível</option>
-                    <option value="available" className="bg-[#14110f] text-white">Disponível</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="availability-start">Início</Label>
-                  <Input
-                    id="availability-start"
-                    type="datetime-local"
-                    value={availabilityForm.startAt}
-                    onChange={(event) => setAvailabilityForm((current) => ({ ...current, startAt: event.target.value }))}
-                    className="h-12 rounded-2xl border-white/10 bg-black/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="availability-end">Fim</Label>
-                  <Input
-                    id="availability-end"
-                    type="datetime-local"
-                    value={availabilityForm.endAt}
-                    onChange={(event) => setAvailabilityForm((current) => ({ ...current, endAt: event.target.value }))}
-                    className="h-12 rounded-2xl border-white/10 bg-black/20"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    className="h-12 w-full rounded-2xl bg-amber-300 text-stone-950 hover:bg-amber-200"
-                    onClick={saveAvailabilityOverride}
-                    disabled={createAvailabilityMutation.isPending}
-                  >
-                    Guardar disponibilidade
-                  </Button>
-                </div>
+      {canManageAvailability && (
+        <Card className="border-white/10 bg-[#14110f] text-white">
+          <CardHeader>
+            <CardTitle>Disponibilidade individual</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Marque períodos de indisponibilidade ou disponibilidade extra para barbeiros específicos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {barberOptions.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="barber-select">Barbeiro</Label>
+                <select
+                  id="barber-select"
+                  value={selectedBarberId}
+                  onChange={(e) => setSelectedBarberId(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-white/10 bg-black/20 px-3 text-white"
+                >
+                  <option value="">Selecione um barbeiro</option>
+                  {barberOptions.map((barber) => (
+                    <option key={barber.id} value={barber.id}>
+                      {barber.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="availability-type">Tipo</Label>
+                <select
+                  id="availability-type"
+                  value={availabilityForm.type}
+                  onChange={(e) => setAvailabilityForm((current) => ({ ...current, type: e.target.value as "available" | "unavailable" }))}
+                  className="h-10 w-full rounded-lg border border-white/10 bg-black/20 px-3 text-white"
+                >
+                  <option value="unavailable">Indisponível</option>
+                  <option value="available">Disponível</option>
+                </select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="availability-reason">Motivo</Label>
-                <Textarea
+                <Label htmlFor="availability-reason">Motivo (opcional)</Label>
+                <Input
                   id="availability-reason"
                   value={availabilityForm.reason}
-                  onChange={(event) => setAvailabilityForm((current) => ({ ...current, reason: event.target.value }))}
-                  className="min-h-24 rounded-2xl border-white/10 bg-black/20"
-                  placeholder="Folga, formação, encaixe especial, atendimento externo ou outro contexto operacional."
+                  onChange={(e) => setAvailabilityForm((current) => ({ ...current, reason: e.target.value }))}
+                  placeholder="Ex: Férias, Formação"
+                  className="h-10 rounded-lg border-white/10 bg-black/20"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="availability-start">Início</Label>
+                <Input
+                  id="availability-start"
+                  type="datetime-local"
+                  value={availabilityForm.startAt}
+                  onChange={(e) => setAvailabilityForm((current) => ({ ...current, startAt: e.target.value }))}
+                  className="h-10 rounded-lg border-white/10 bg-black/20"
                 />
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-white">Próximas exceções de agenda</p>
-                    <p className="mt-1 text-sm text-zinc-400">Janela dos próximos 14 dias para o barbeiro selecionado.</p>
-                  </div>
-                  {selectedBarberId ? (
-                    <Badge className="rounded-full bg-amber-300/10 text-amber-100">{availabilityItems.length} registos</Badge>
-                  ) : null}
-                </div>
-
-                {!selectedBarberId ? (
-                  <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-zinc-500">
-                    Selecione um barbeiro para consultar ou editar a disponibilidade individual.
-                  </div>
-                ) : availabilityQuery.isLoading ? (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-zinc-400">
-                    A carregar disponibilidade individual do barbeiro selecionado.
-                  </div>
-                ) : availabilityQuery.error ? (
-                  <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-red-100">
-                    Não foi possível carregar os registos de disponibilidade neste momento.
-                  </div>
-                ) : availabilityItems.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-zinc-500">
-                    Ainda não existem exceções registadas para este barbeiro no horizonte configurado.
-                  </div>
-                ) : (
-                  availabilityItems.map((item) => (
-                    <div key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div>
-                          <p className="font-medium text-white">{item.reason ?? "Sem motivo especificado"}</p>
-                          <p className="mt-1 text-sm text-zinc-400">
-                            {toDateTimeLocalInput(item.startAt).replace("T", " ")} — {toDateTimeLocalInput(item.endAt).replace("T", " ")}
-                          </p>
-                        </div>
-                        <Badge className={`rounded-full ${item.type === "available" ? "bg-emerald-500/10 text-emerald-200" : "bg-white/10 text-zinc-100"}`}>
-                          {item.type === "available" ? "Disponível" : "Indisponível"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div className="space-y-2">
+                <Label htmlFor="availability-end">Fim</Label>
+                <Input
+                  id="availability-end"
+                  type="datetime-local"
+                  value={availabilityForm.endAt}
+                  onChange={(e) => setAvailabilityForm((current) => ({ ...current, endAt: e.target.value }))}
+                  className="h-10 rounded-lg border-white/10 bg-black/20"
+                />
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+
+            <Button
+              onClick={saveAvailabilityOverride}
+              disabled={createAvailabilityMutation.isPending}
+              className="w-full rounded-lg bg-amber-300 text-stone-950 hover:bg-amber-200"
+            >
+              {createAvailabilityMutation.isPending ? "A guardar..." : "Guardar disponibilidade"}
+            </Button>
+
+            {availabilityItems.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <p className="text-sm font-medium text-zinc-300">Períodos registados (próximos 14 dias):</p>
+                {availabilityItems.map((item, idx) => (
+                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
+                    <p className="text-white">
+                      {item.type === "unavailable" ? "❌ Indisponível" : "✅ Disponível"} {item.reason ? `(${item.reason})` : ""}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      {new Date(item.startAt).toLocaleString("pt-PT")} até {new Date(item.endAt).toLocaleString("pt-PT")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

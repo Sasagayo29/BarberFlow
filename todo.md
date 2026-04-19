@@ -33,12 +33,12 @@
 - [x] Adicionar coluna `barbershop_id` às tabelas existentes (users, services, appointments, business_hours, availability_overrides) para suportar multi-tenancy
 - [x] Implementar procedure backend para Super Admin criar novas barbearias
 - [x] Implementar procedure backend para Super Admin ativar/desativar barbearias
-- [ ] Implementar filtro de dados por barbershop_id em todas as queries do backend
+- [x] Implementar filtro de dados por barbershop_id em todas as queries do backend
 - [x] Atualizar frontend Home.tsx para exibir "Bem-vindo, [Nome do Utilizador]" em vez de "Bem-vindo, Utilizador"
 - [x] Criar UI do Super Admin para gestão de barbearias (criar, listar, ativar/desativar)
 - [x] Alterar formatação de moeda de EUR (€) para BRL (R$) em toda a aplicação
 - [x] Implementar sistema de customização global com tabela `settings` (theme, colors, company_name, currency, etc.)
-- [ ] Criar página de Configurações para permitir customização de temas, cores, textos e outros parâmetros
-- [ ] Testar fluxos de multi-tenancy com múltiplas barbearias
-- [ ] Validar personalização de mensagens e moeda em toda a aplicação
+- [x] Criar página de Configurações para permitir customização de temas, cores, textos e outros parâmetros
+- [x] Testar fluxos de multi-tenancy com múltiplas barbearias
+- [x] Validar personalização de mensagens e moeda em toda a aplicação
 - [x] Escrever testes Vitest para procedures de gestão de barbearias

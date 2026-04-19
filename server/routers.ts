@@ -767,6 +767,49 @@ export const appRouter = router({
         }),
     }),
 
+    customization: router({
+      get: protectedProcedure
+        .input(z.object({ key: z.string() }).optional())
+        .query(async ({ ctx, input }) => {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+
+          if (input?.key) {
+            const result = await db.select().from(settings).where(eq(settings.key, input.key)).limit(1);
+            return result[0]?.value ?? null;
+          }
+
+          const allSettings = await db.select().from(settings);
+          const result: Record<string, string> = {};
+          for (const setting of allSettings) {
+            result[setting.key] = setting.value;
+          }
+          return result;
+        }),
+
+      set: protectedProcedure
+        .input(
+          z.object({
+            key: z.string().min(1).max(100),
+            value: z.string().max(1000),
+          }),
+        )
+        .mutation(async ({ ctx, input }) => {
+          requireManager(ctx.user);
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+
+          const existing = await db.select().from(settings).where(eq(settings.key, input.key)).limit(1);
+          if (existing[0]) {
+            await db.update(settings).set({ value: input.value }).where(eq(settings.key, input.key));
+          } else {
+            await db.insert(settings).values({ key: input.key, value: input.value });
+          }
+
+          return { success: true };
+        }),
+    }),
+
     barberAvailability: router({
       list: protectedProcedure
         .input(
