@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowRight, CalendarClock, Scissors, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CalendarClock, Scissors, ShieldCheck, Users, Database } from "lucide-react";
 import { useLocation } from "wouter";
 
 const quickLinks = [
@@ -24,6 +24,15 @@ const quickLinks = [
     description: "Gira permissões e mantenha o quadro de barbeiros organizado.",
     href: "/equipa",
     icon: Users,
+  },
+];
+
+const adminLinks = [
+  {
+    title: "Gerenciamento de Dados",
+    description: "Visualize estatísticas, limpe dados de teste e gerencie usuários.",
+    href: "/admin/dados",
+    icon: Database,
   },
 ];
 
@@ -165,6 +174,25 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-zinc-500 transition group-hover:translate-x-1 group-hover:text-amber-200" />
+              </button>
+            ))}
+            {user?.role === "super_admin" && adminLinks.map((item) => (
+              <button
+                key={item.href}
+                type="button"
+                onClick={() => setLocation(item.href)}
+                className="group flex w-full items-center justify-between rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-left transition hover:border-red-300/30 hover:bg-red-500/10"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-200">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">{item.title}</p>
+                    <p className="mt-1 text-sm text-zinc-400">{item.description}</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-zinc-500 transition group-hover:translate-x-1 group-hover:text-red-200" />
               </button>
             ))}
 

@@ -12,6 +12,7 @@ import ReportsPage from "./pages/ReportsPage";
 import DashboardPage from "./pages/DashboardPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { ClientDashboard } from "./pages/ClientDashboard";
+import { AdminDataManagement } from "./pages/AdminDataManagement";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import ServicesPage from "./pages/ServicesPage";
@@ -63,6 +64,7 @@ function Router() {
         {() => <DashboardShell component={ReportsPage} />}
       </Route>
       <Route path="/meu-painel" component={ClientDashboard} />
+      <Route path="/admin/dados" component={AdminDataManagement} />
       <Route path="/checkout" component={CheckoutPage} />
       <Route path="/pagamento-confirmado" component={CheckoutPage} />
       <Route path="/pagamento-cancelado" component={CheckoutPage} />
