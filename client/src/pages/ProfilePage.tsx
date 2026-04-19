@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlertCircle, Camera, Mail, User } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type ProfileFormState = {
   name: string;
@@ -27,6 +27,17 @@ export default function ProfilePage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
+  // Re-hidratar form quando user muda (após invalidate)
+  useEffect(() => {
+    if (user) {
+      setForm({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user?.id, user?.name, user?.email, user?.phone]);
+
   const updateMutation = trpc.users.updateOwnProfile.useMutation({
     onSuccess: () => {
       setFeedback("Perfil atualizado com sucesso!");
@@ -44,7 +55,7 @@ export default function ProfilePage() {
     }
     updateMutation.mutate({
       name: form.name.trim(),
-      phone: form.phone.trim() || undefined,
+      phone: form.phone.trim() === "" ? null : form.phone.trim(),
     });
   };
 
@@ -53,7 +64,7 @@ export default function ProfilePage() {
       name: user?.name || "",
       email: user?.email || "",
       phone: user?.phone || "",
-    });
+    }); // Re-sync com user atual
     setIsEditing(false);
     setFeedback(null);
   };
