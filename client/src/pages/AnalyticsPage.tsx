@@ -46,8 +46,9 @@ export default function AnalyticsPage() {
         </div>
       </section>
 
-      {/* Filtro de Período */}
-      <div className="flex gap-2">
+      {/* Filtro de Período e Botão de Gerar */}
+      <div className="flex gap-2 justify-between items-center">
+        <div className="flex gap-2">
         {(["today", "week", "month", "year"] as const).map((p) => (
           <Button
             key={p}
@@ -62,6 +63,24 @@ export default function AnalyticsPage() {
             {p === "year" && "Ano"}
           </Button>
         ))}
+        </div>
+        <Button
+          onClick={() => {
+            const newData = {
+              date: new Date().toLocaleDateString('pt-BR'),
+              revenue: Math.floor(Math.random() * 1000) + 300,
+              appointments: Math.floor(Math.random() * 10) + 3,
+            };
+            const analytics = JSON.parse(localStorage.getItem('analytics') || '[]');
+            analytics.push(newData);
+            localStorage.setItem('analytics', JSON.stringify(analytics));
+            alert('Dados de analytics gerados com sucesso!');
+            window.location.reload();
+          }}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          + Gerar Analytics
+        </Button>
       </div>
 
       {/* KPIs */}

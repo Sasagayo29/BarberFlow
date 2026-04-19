@@ -565,6 +565,31 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    updateOwnProfile: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(3).max(180).optional(),
+          phone: z.string().min(6).max(32).nullable().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+
+        const updates: any = {};
+        if (input.name !== undefined) updates.name = input.name.trim();
+        if (input.phone !== undefined) updates.phone = input.phone === null ? null : input.phone.trim();
+
+        if (Object.keys(updates).length === 0) {
+          return { success: true, message: "Nenhuma alteração realizada." };
+        }
+
+        await db.update(users).set(updates).where(eq(users.id, ctx.user.id));
+
+        console.log(`[Profile] Usuário ${ctx.user.id} atualizou seu perfil:`, updates);
+        return { success: true, message: "Perfil atualizado com sucesso!" };
+      }),
+
     archive: protectedProcedure
       .input(z.object({ userId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {

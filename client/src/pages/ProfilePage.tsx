@@ -27,7 +27,7 @@ export default function ProfilePage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const updateMutation = trpc.users.update.useMutation({
+  const updateMutation = trpc.users.updateOwnProfile.useMutation({
     onSuccess: () => {
       setFeedback("Perfil atualizado com sucesso!");
       setIsEditing(false);
@@ -42,9 +42,7 @@ export default function ProfilePage() {
       setFeedback("Nome é obrigatório.");
       return;
     }
-    if (!user?.id) return;
     updateMutation.mutate({
-      userId: user.id,
       name: form.name.trim(),
       phone: form.phone.trim() || undefined,
     });
