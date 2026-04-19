@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 
-type TeamRole = "super_admin" | "barber_owner" | "barber_staff";
+type TeamRole = "super_admin" | "barber_admin" | "barber_owner" | "barber_staff";
 type MemberStatus = "active" | "inactive" | "blocked";
 
 type TeamFormState = {
@@ -39,6 +39,7 @@ const initialForm: TeamFormState = {
 
 const roleLabels: Record<TeamRole, string> = {
   super_admin: "Super Admin",
+  barber_admin: "Admin da Barbearia",
   barber_owner: "Barbeiro Chef",
   barber_staff: "Barbeiro Operacional",
 };

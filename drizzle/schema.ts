@@ -14,6 +14,7 @@ import {
 
 export const userRoleEnum = mysqlEnum("role", [
   "super_admin",
+  "barber_admin",
   "barber_owner",
   "barber_staff",
   "client",
@@ -79,6 +80,7 @@ export const users = mysqlTable(
   {
     id: int("id").autoincrement().primaryKey(),
     barbershopId: int("barbershopId"),
+    createdByUserId: int("createdByUserId"),
     openId: varchar("openId", { length: 64 }).unique(),
     name: varchar("name", { length: 180 }),
     phone: varchar("phone", { length: 32 }),

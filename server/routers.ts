@@ -27,11 +27,12 @@ import {
   users,
 } from "./db";
 
-const roleSchema = z.enum(["super_admin", "barber_owner", "barber_staff", "client"]);
+const roleSchema = z.enum(["super_admin", "barber_admin", "barber_owner", "barber_staff", "client"]);
+const managerRolesArray = ["super_admin", "barber_admin", "barber_owner"] as const;
 const appointmentStatusSchema = z.enum(["pending", "confirmed", "completed", "cancelled", "no_show"]);
 const availabilityTypeSchema = z.enum(["available", "unavailable"]);
 
-const managerRoles = ["super_admin", "barber_owner"] as const;
+const managerRoles = ["super_admin", "barber_admin", "barber_owner"] as const;
 const teamRoles = ["barber_owner", "barber_staff"] as const;
 const activeAppointmentStatuses = ["pending", "confirmed"] as const;
 
@@ -449,7 +450,7 @@ export const appRouter = router({
           phone: z.string().min(6).max(32).optional(),
           email: z.string().email(),
           password: z.string().min(8).max(128),
-          role: z.enum(["barber_owner", "barber_staff", "super_admin"]),
+          role: z.enum(["barber_admin", "barber_owner", "barber_staff", "super_admin"]),
           specialty: z.string().max(160).optional(),
           bio: z.string().max(500).optional(),
           displayName: z.string().min(2).max(120).optional(),
@@ -1133,6 +1134,60 @@ export const appRouter = router({
       return await getBarbershopsByOwner(ctx.user.id);
     }),
 
+    get: protectedProcedure
+      .input(z.object({ barbershopId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+        const barbershop = await db.select().from(barbershops).where(eq(barbershops.id, input.barbershopId)).limit(1);
+        if (!barbershop[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia não encontrada." });
+        if (ctx.user.role !== "super_admin" && barbershop[0].ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para acessar esta barbearia." });
+        }
+        return barbershop[0];
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          barbershopId: z.number(),
+          name: z.string().min(3).max(180).optional(),
+          description: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().email().optional(),
+          address: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+        const barbershop = await db.select().from(barbershops).where(eq(barbershops.id, input.barbershopId)).limit(1);
+        if (!barbershop[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia não encontrada." });
+        if (ctx.user.role !== "super_admin" && barbershop[0].ownerUserId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para editar esta barbearia." });
+        }
+        await db.update(barbershops).set({
+          name: input.name ?? barbershop[0].name,
+          description: input.description ?? barbershop[0].description,
+          phone: input.phone ?? barbershop[0].phone,
+          email: input.email ?? barbershop[0].email,
+          address: input.address ?? barbershop[0].address,
+        }).where(eq(barbershops.id, input.barbershopId));
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ barbershopId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        requireSuperAdmin(ctx.user);
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+        const barbershop = await db.select().from(barbershops).where(eq(barbershops.id, input.barbershopId)).limit(1);
+        if (!barbershop[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia não encontrada." });
+        await db.delete(barbershops).where(eq(barbershops.id, input.barbershopId));
+        return { success: true };
+      }),
+
     toggleStatus: protectedProcedure
       .input(
         z.object({
@@ -1152,6 +1207,67 @@ export const appRouter = router({
         await updateBarbershopStatus(input.barbershopId, input.status);
         return { success: true };
       }),
+
+    team: router({
+      list: protectedProcedure
+        .input(z.object({ barbershopId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+          const barbershop = await db.select().from(barbershops).where(eq(barbershops.id, input.barbershopId)).limit(1);
+          if (!barbershop[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia não encontrada." });
+          if (ctx.user.role !== "super_admin" && barbershop[0].ownerUserId !== ctx.user.id && ctx.user.barbershopId !== input.barbershopId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para listar equipa." });
+          }
+          return await db.select().from(users).where(eq(users.barbershopId, input.barbershopId)).orderBy(asc(users.name));
+        }),
+
+      create: protectedProcedure
+        .input(
+          z.object({
+            barbershopId: z.number(),
+            name: z.string().min(3).max(180),
+            email: z.string().email(),
+            phone: z.string().optional(),
+            role: z.enum(["barber_admin", "barber_owner", "barber_staff"]),
+          }),
+        )
+        .mutation(async ({ ctx, input }) => {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+          const barbershop = await db.select().from(barbershops).where(eq(barbershops.id, input.barbershopId)).limit(1);
+          if (!barbershop[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia não encontrada." });
+          if (ctx.user.role !== "super_admin" && barbershop[0].ownerUserId !== ctx.user.id && ctx.user.role !== "barber_admin") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para criar usuários." });
+          }
+          const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+          if (existing[0]) throw new TRPCError({ code: "BAD_REQUEST", message: "E-mail já registado." });
+          const result = await db.insert(users).values({
+            barbershopId: input.barbershopId,
+            createdByUserId: ctx.user.id,
+            name: input.name,
+            email: input.email,
+            phone: input.phone,
+            role: input.role,
+            status: "active",
+          });
+          return { success: true };
+        }),
+
+      deactivate: protectedProcedure
+        .input(z.object({ userId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+          const user = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
+          if (!user[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado." });
+          if (ctx.user.role !== "super_admin" && user[0].barbershopId !== ctx.user.barbershopId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para desativar este usuário." });
+          }
+          await db.update(users).set({ status: "inactive" }).where(eq(users.id, input.userId));
+          return { success: true };
+        }),
+    }),
   }),
 
   dashboard: router({

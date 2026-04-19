@@ -1,0 +1,2 @@
+ALTER TABLE `users` MODIFY COLUMN `role` enum('super_admin','barber_admin','barber_owner','barber_staff','client') NOT NULL DEFAULT 'client';--> statement-breakpoint
+ALTER TABLE `users` ADD `createdByUserId` int;

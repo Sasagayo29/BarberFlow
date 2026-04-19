@@ -27,7 +27,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-type DashboardRole = "super_admin" | "barber_owner" | "barber_staff" | "client";
+type DashboardRole = "super_admin" | "barber_admin" | "barber_owner" | "barber_staff" | "client";
 
 type MenuItem = {
   icon: typeof LayoutDashboard;

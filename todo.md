@@ -1,44 +1,64 @@
-# Project TODO
+# Barbearia Gestão - TODO
 
-- [x] Definir a direção visual elegante e sofisticada da aplicação, incluindo tema global, tipografia, paleta e padrões de interface.
-- [x] Estender o modelo de utilizadores para suportar os perfis Super Admin, Barbeiro Chef, Barbeiro Operacional e Cliente com permissões claramente separadas.
-- [x] Modelar a base de dados para clientes, barbeiros, serviços, vínculos entre barbeiros e serviços, horários de funcionamento, disponibilidades individuais e agendamentos.
-- [x] Implementar autenticação com login, cadastro de clientes com nome, telefone, e-mail e senha, e recuperação de senha.
-- [x] Implementar regras de autorização no backend para garantir que cada perfil apenas acede às funcionalidades e dados pertinentes.
-- [x] Implementar gestão de utilizadores pelo Super Admin e pelo Barbeiro Chef, incluindo criar, editar e excluir barbeiros e administradores elegíveis.
-- [x] Implementar gestão de serviços com nome, descrição, preço, duração estimada e associação a barbeiros específicos.
-- [x] Implementar sistema de agendamento com escolha de serviço, barbeiro, data e horário.
-- [x] Implementar bloqueio automático e em tempo real de horários ocupados, evitando dupla marcação sem intervenção manual.
-- [x] Implementar confirmação, cancelamento e reagendamento de agendamentos.
-- [x] Implementar calendário com vistas por dia, semana e mês, incluindo agenda individual por barbeiro e destaque visual de horários livres e ocupados.
-- [x] Implementar histórico de agendamentos e cortes acessível para clientes e barbeiros.
-- [x] Implementar configuração de horários de funcionamento da barbearia e disponibilidade individual por barbeiro.
-- [x] Implementar painel administrativo com dashboard de total de agendamentos, faturamento, serviços mais utilizados e relatórios básicos.
-- [x] Implementar frontend responsivo com experiência distinta por perfil, incluindo login, área do cliente, agenda da equipa e área administrativa.
-- [x] Escrever testes automatizados para regras críticas de autorização, disponibilidade e agendamento.
-- [x] Validar o comportamento da aplicação no navegador e corrigir estados de erro, vazio e carregamento.
-- [x] Criar checkpoint final do projeto após conclusão e validação.
-- [x] Implementar e evidenciar o fluxo completo de recuperação de senha, incluindo redefinição com token e respetivos testes.
-- [x] Adicionar e comprovar procedures e testes do dashboard para métricas administrativas e relatórios básicos.
-- [x] Escrever testes automatizados para disponibilidade, conflitos de horários, criação, reagendamento e cancelamento de agendamentos.
-- [x] Concluir a validação visual das páginas principais no navegador para a área de gestão e comprovar a separação restante por perfil através da navegação filtrada e dos testes de permissões implementados.
-- [x] Adicionar estados explícitos de carregamento e erro nas páginas secundárias do frontend e revalidá-los visualmente.
-- [x] Alinhar o escopo entregue do dashboard aos relatórios básicos implementados: resumo executivo, serviços mais utilizados e próximos atendimentos.
-- [x] Adicionar testes Vitest para disponibilidade e listagem de slots, criação bem-sucedida de agendamento e reagendamento, complementando os testes já existentes de conflito e cancelamento.
-- [x] Alinhar explicitamente o escopo final da gestão da equipa para arquivamento administrativo de utilizadores elegíveis, em vez de eliminação definitiva.
+## Fase 1: Schema com Camadas de Usuários
 
-## Novos Requisitos - Multi-Tenancy e Customização
+- [x] Atualizar enum de roles: super_admin, barber_admin, barber_owner, barber_staff, client
+- [x] Adicionar coluna `barbershop_id` na tabela `users` (FK para barbershops)
+- [x] Adicionar coluna `created_by_user_id` na tabela `users` (quem criou o usuário)
+- [x] Criar índices para queries de filtro por barbershop_id
+- [x] Gerar e aplicar migração SQL
 
-- [x] Criar tabela `barbershops` na base de dados com campos: id, name, status (ativo/inativo), owner_id, created_at, updated_at
-- [x] Adicionar coluna `barbershop_id` às tabelas existentes (users, services, appointments, business_hours, availability_overrides) para suportar multi-tenancy
-- [x] Implementar procedure backend para Super Admin criar novas barbearias
-- [x] Implementar procedure backend para Super Admin ativar/desativar barbearias
-- [x] Implementar filtro de dados por barbershop_id em todas as queries do backend
-- [x] Atualizar frontend Home.tsx para exibir "Bem-vindo, [Nome do Utilizador]" em vez de "Bem-vindo, Utilizador"
-- [x] Criar UI do Super Admin para gestão de barbearias (criar, listar, ativar/desativar)
-- [x] Alterar formatação de moeda de EUR (€) para BRL (R$) em toda a aplicação
-- [x] Implementar sistema de customização global com tabela `settings` (theme, colors, company_name, currency, etc.)
-- [x] Criar página de Configurações para permitir customização de temas, cores, textos e outros parâmetros
-- [x] Testar fluxos de multi-tenancy com múltiplas barbearias
-- [x] Validar personalização de mensagens e moeda em toda a aplicação
-- [x] Escrever testes Vitest para procedures de gestão de barbearias
+## Fase 2: Backend - Procedures tRPC
+
+- [x] Criar procedures para CRUD de barbearias (create, read, update, delete, list)
+- [x] Criar procedures para gestão de equipa (create user, update role, list team, deactivate)
+- [x] Implementar validações de permissões em cada procedure
+- [ ] Adicionar procedures para saudações personalizadas por usuário
+- [ ] Testar todas as procedures com permissões corretas
+
+## Fase 3: Isolamento de Dados
+
+- [ ] Filtrar serviços por barbershop_id
+- [ ] Filtrar agendamentos por barbershop_id
+- [ ] Filtrar equipa por barbershop_id (admin vê sua equipa, super admin vê tudo)
+- [ ] Filtrar configurações por barbershop_id
+- [ ] Validar que usuários só acessam dados de sua barbearia
+
+## Fase 4: UI - CRUD de Barbearias
+
+- [ ] Criar página de edição de barbearia (update)
+- [ ] Criar página de listagem com ações (edit, delete, toggle status)
+- [ ] Implementar confirmação de exclusão
+- [ ] Adicionar formulário de criação com validações
+- [ ] Adicionar indicadores visuais de status (ativa/inativa)
+
+## Fase 5: UI - Gestão de Equipa
+
+- [ ] Criar página de gestão de equipa por barbearia
+- [ ] Implementar formulário de criação de usuário (admin cria barbeiros)
+- [ ] Adicionar listagem de equipa com ações (edit, deactivate)
+- [ ] Implementar filtro de roles
+- [ ] Adicionar indicadores de quem criou cada usuário
+
+## Fase 6: Saudações Personalizadas
+
+- [ ] Atualizar Home para exibir saudação personalizada do usuário
+- [ ] Adicionar saudação personalizada por barbearia
+- [ ] Implementar fallback para usuários sem barbearia
+- [ ] Adicionar mensagem de boas-vindas customizável por barbearia
+
+## Fase 7: Testes Vitest
+
+- [ ] Testes de CRUD de barbearias com permissões
+- [ ] Testes de gestão de equipa (create, update, list, deactivate)
+- [ ] Testes de isolamento de dados por barbershop_id
+- [ ] Testes de permissões granulares (admin vs super admin)
+- [ ] Testes de saudações personalizadas
+
+## Fase 8: Dados de Teste e Documentação
+
+- [ ] Criar script de seed com Super Admin, Admins, Barbeiros e Clientes
+- [ ] Documentar credenciais de acesso
+- [ ] Documentar arquitetura e fluxos de permissão
+- [ ] Documentar guia de uso completo
+- [ ] Documentar hospedagem, banco de dados e configurações
