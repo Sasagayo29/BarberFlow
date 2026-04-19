@@ -1462,6 +1462,116 @@ export const appRouter = router({
         }
       }),
   }),
+
+  reports: router({
+    generatePDF: protectedProcedure
+      .input(
+        z.object({
+          barbershopId: z.number(),
+          period: z.string(),
+          startDate: z.number().optional(),
+          endDate: z.number().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        requireManager(ctx.user);
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+        try {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+
+          // Verificar permissão
+          if (ctx.user.role !== "super_admin" && ctx.user.barbershopId !== input.barbershopId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para este relatório" });
+          }
+
+          // Buscar dados da barbearia
+          const barbershop = await db.select().from(barbershops).where(eq(barbershops.id, input.barbershopId)).limit(1);
+          if (!barbershop.length) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia não encontrada" });
+
+          // Buscar agendamentos
+          const appointmentsList = await db
+            .select()
+            .from(appointments)
+            .where(
+              and(
+                eq(appointments.barbershopId, input.barbershopId),
+                input.startDate ? gte(appointments.startsAt, input.startDate) : undefined,
+                input.endDate ? lte(appointments.startsAt, input.endDate) : undefined,
+              ),
+            );
+
+          // Calcular KPIs
+          const totalRevenue = appointmentsList
+            .filter((a) => a.status === "completed")
+            .reduce((sum, a) => sum + (a.totalPrice ? parseFloat(a.totalPrice.toString()) : 0), 0);
+
+          const totalAppointments = appointmentsList.length;
+          const averageTicket = totalAppointments > 0 ? totalRevenue / totalAppointments : 0;
+
+          // Status dos agendamentos
+          const appointmentsByStatus = {
+            completed: appointmentsList.filter((a) => a.status === "completed").length,
+            cancelled: appointmentsList.filter((a) => a.status === "cancelled").length,
+            noshow: appointmentsList.filter((a) => a.status === "no_show").length,
+          };
+
+          // Serviços mais procurados
+          const serviceMap = new Map<number, { name: string; count: number; revenue: number }>();
+          appointmentsList.forEach((apt) => {
+            if (apt.serviceId) {
+              const existing = serviceMap.get(apt.serviceId) || { name: `Serviço ${apt.serviceId}`, count: 0, revenue: 0 };
+              existing.count += 1;
+              if (apt.status === "completed") {
+                existing.revenue += apt.totalPrice ? parseFloat(apt.totalPrice.toString()) : 0;
+              }
+              serviceMap.set(apt.serviceId, existing);
+            }
+          });
+          const topServices = Array.from(serviceMap.values()).sort((a, b) => b.revenue - a.revenue);
+
+          // Barbeiros com melhor desempenho
+          const barberMap = new Map<number, { name: string; appointments: number; revenue: number }>();
+          appointmentsList.forEach((apt) => {
+            if (apt.barberUserId) {
+              const existing = barberMap.get(apt.barberUserId) || { name: `Barbeiro ${apt.barberUserId}`, appointments: 0, revenue: 0 };
+              existing.appointments += 1;
+              if (apt.status === "completed") {
+                existing.revenue += apt.totalPrice ? parseFloat(apt.totalPrice.toString()) : 0;
+              }
+              barberMap.set(apt.barberUserId, existing);
+            }
+          });
+          const topBarbers = Array.from(barberMap.values()).sort((a, b) => b.revenue - a.revenue);
+
+          // Gerar PDF
+          const { generateReportPDF } = await import("./_core/pdfGenerator");
+          const pdfBuffer = await generateReportPDF({
+            barbershopName: barbershop[0].name,
+            period: input.period,
+            totalRevenue,
+            totalAppointments,
+            averageTicket,
+            topServices,
+            topBarbers,
+            appointmentsByStatus,
+          });
+
+          return {
+            success: true,
+            pdf: pdfBuffer.toString("base64"),
+            filename: `relatorio-${barbershop[0].name.toLowerCase().replace(/\s+/g, "-")}-${new Date().getTime()}.pdf`,
+          };
+        } catch (error) {
+          console.error("Erro ao gerar relatório PDF:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao gerar relatório PDF",
+          });
+        }
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

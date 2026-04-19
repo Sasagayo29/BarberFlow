@@ -93,3 +93,58 @@ Todas as funcionalidades foram implementadas, testadas e validadas com sucesso. 
 - Notificações por email
 - Webhooks de pagamento
 - Dashboard de analytics avançado
+
+
+## Fase 14: Integração Real com Stripe SDK
+
+- [ ] Implementar checkout real com stripe.checkout.sessions.create()
+- [ ] Criar webhook endpoint para payment_intent.succeeded
+- [ ] Persistir Stripe Customer ID no banco de dados
+- [ ] Atualizar status de pagamento via webhook
+- [ ] Implementar UI de checkout para clientes
+- [ ] Testar fluxo completo de pagamento
+
+## Fase 15: Geração de PDF Real
+
+- [ ] Instalar biblioteca pdfkit ou html2pdf
+- [ ] Implementar geração de PDF para relatório de agendamentos
+- [ ] Implementar geração de PDF para relatório de receitas
+- [ ] Adicionar headers e footers aos PDFs
+- [ ] Testar download de PDFs
+
+## Fase 16: Notificações por Email
+
+- [ ] Implementar envio de email de confirmação de agendamento
+- [ ] Implementar lembretes 24h antes do agendamento
+- [ ] Implementar notificação de cancelamento
+- [ ] Implementar templates de email customizáveis
+- [ ] Testar envio de emails
+
+---
+
+## ✅ Atualizações Recentes (19 de Abril de 2026)
+
+### Geração de PDF Real
+- [x] Instalado pdfkit e @types/pdfkit
+- [x] Criado helper `pdfGenerator.ts` com funções para gerar PDFs profissionais
+- [x] Implementado `generateReportPDF()` com KPIs, tabelas e gráficos
+- [x] Implementado `generateInvoicePDF()` para recibos
+- [x] Adicionado router `reports.generatePDF` com cálculo de métricas
+- [x] Página de relatórios atualizada com integração de PDF real
+- [x] Suporte a download de PDF com base64
+
+### Página de Checkout
+- [x] Criada `CheckoutPage.tsx` para processar pagamentos
+- [x] Adicionadas rotas `/checkout`, `/pagamento-confirmado`, `/pagamento-cancelado`
+- [x] UI com estados de loading, sucesso e erro
+- [x] Integração com tRPC para confirmação de pagamento
+
+### Melhorias de Segurança
+- [x] Validação de permissões em procedures de relatórios
+- [x] Isolamento de dados por barbearia
+- [x] Verificação de barbershopId em todas as operações
+
+### Testes
+- [x] 30 testes Vitest passando
+- [x] Sem erros TypeScript
+- [x] Validações em todas as procedures

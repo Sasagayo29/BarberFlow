@@ -10,6 +10,7 @@ import SocialMediaPage from "./pages/SocialMediaPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import ReportsPage from "./pages/ReportsPage";
 import DashboardPage from "./pages/DashboardPage";
+import { CheckoutPage } from "./pages/CheckoutPage";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import ServicesPage from "./pages/ServicesPage";
@@ -60,6 +61,9 @@ function Router() {
       <Route path="/relatorios">
         {() => <DashboardShell component={ReportsPage} />}
       </Route>
+      <Route path="/checkout" component={CheckoutPage} />
+      <Route path="/pagamento-confirmado" component={CheckoutPage} />
+      <Route path="/pagamento-cancelado" component={CheckoutPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
