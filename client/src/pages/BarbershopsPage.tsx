@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { AlertCircle, Building2, Plus, ToggleLeft, ToggleRight } from "lucide-react";
+import { AlertCircle, Building2, Edit2, Plus, Trash2, ToggleLeft, ToggleRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
 type BarbershopFormState = {
+  id?: number;
   name: string;
   description: string;
   phone: string;
@@ -40,6 +41,8 @@ export default function BarbershopsPage() {
 
   const [form, setForm] = useState<BarbershopFormState>(initialForm);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
 
   const barbershopsQuery = trpc.barbershops.list.useQuery(undefined, { retry: false });
   const barbershops = barbershopsQuery.data ?? [];
@@ -48,6 +51,26 @@ export default function BarbershopsPage() {
     onSuccess: () => {
       setFeedback("Barbearia criada com sucesso!");
       setForm(initialForm);
+      setEditingId(null);
+      utils.barbershops.list.invalidate();
+    },
+    onError: (error) => setFeedback(error.message),
+  });
+
+  const updateMutation = trpc.barbershops.update.useMutation({
+    onSuccess: () => {
+      setFeedback("Barbearia atualizada com sucesso!");
+      setForm(initialForm);
+      setEditingId(null);
+      utils.barbershops.list.invalidate();
+    },
+    onError: (error) => setFeedback(error.message),
+  });
+
+  const deleteMutation = trpc.barbershops.delete.useMutation({
+    onSuccess: () => {
+      setFeedback("Barbearia deletada com sucesso!");
+      setShowDeleteConfirm(null);
       utils.barbershops.list.invalidate();
     },
     onError: (error) => setFeedback(error.message),
@@ -69,6 +92,45 @@ export default function BarbershopsPage() {
     createMutation.mutate(form);
   };
 
+  const handleUpdate = () => {
+    if (!form.name.trim()) {
+      setFeedback("Nome da barbearia é obrigatório.");
+      return;
+    }
+    if (!form.id) return;
+    updateMutation.mutate({
+      barbershopId: form.id,
+      name: form.name,
+      description: form.description,
+      phone: form.phone,
+      email: form.email,
+      address: form.address,
+    });
+  };
+
+  const handleEdit = (barbershop: any) => {
+    setForm({
+      id: barbershop.id,
+      name: barbershop.name,
+      description: barbershop.description || "",
+      phone: barbershop.phone || "",
+      email: barbershop.email || "",
+      address: barbershop.address || "",
+    });
+    setEditingId(barbershop.id);
+    setFeedback(null);
+  };
+
+  const handleDelete = (barbershopId: number) => {
+    deleteMutation.mutate({ barbershopId });
+  };
+
+  const handleCancel = () => {
+    setForm(initialForm);
+    setEditingId(null);
+    setFeedback(null);
+  };
+
   const handleToggleStatus = (barbershopId: number, currentStatus: string) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
     toggleMutation.mutate({ barbershopId, status: newStatus as "active" | "inactive" });
@@ -77,6 +139,8 @@ export default function BarbershopsPage() {
   if (user?.role !== "super_admin") {
     return null;
   }
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-8">
@@ -92,7 +156,7 @@ export default function BarbershopsPage() {
                 Controle suas barbearias
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-zinc-300 lg:text-base">
-                Crie novas barbearias, ative ou desative conforme necessário e gerencie todas as operações centralizadamente.
+                Crie novas barbearias, edite informações, ative ou desative conforme necessário e gerencie todas as operações centralizadamente.
               </p>
             </div>
           </div>
@@ -103,6 +167,12 @@ export default function BarbershopsPage() {
           </div>
         </div>
       </section>
+
+      {feedback && (
+        <div className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100">
+          {feedback}
+        </div>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="border-white/10 bg-white/5">
@@ -129,30 +199,78 @@ export default function BarbershopsPage() {
                     key={barbershop.id}
                     className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-lg border border-white/10 bg-black/20 p-2 text-amber-200">
-                        <Building2 className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-white">{barbershop.name}</p>
-                        <p className="text-xs text-zinc-400">
-                          {barbershop.status === "active" ? "Ativa" : "Inativa"}
-                        </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-lg border border-white/10 bg-black/20 p-2 text-amber-200">
+                          <Building2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{barbershop.name}</p>
+                          <p className="text-xs text-zinc-400">
+                            {barbershop.status === "active" ? "✓ Ativa" : "✗ Inativa"}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleToggleStatus(barbershop.id, barbershop.status)}
-                      disabled={toggleMutation.isPending}
-                      className="text-amber-200 hover:bg-amber-300/10"
-                    >
-                      {barbershop.status === "active" ? (
-                        <ToggleRight className="h-5 w-5" />
-                      ) : (
-                        <ToggleLeft className="h-5 w-5" />
-                      )}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(barbershop)}
+                        className="text-blue-400 hover:bg-blue-300/10"
+                        disabled={isSubmitting}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleToggleStatus(barbershop.id, barbershop.status)}
+                        disabled={toggleMutation.isPending}
+                        className="text-amber-200 hover:bg-amber-300/10"
+                      >
+                        {barbershop.status === "active" ? (
+                          <ToggleRight className="h-4 w-4" />
+                        ) : (
+                          <ToggleLeft className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowDeleteConfirm(barbershop.id)}
+                        className="text-red-400 hover:bg-red-300/10"
+                        disabled={isSubmitting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {showDeleteConfirm === barbershop.id && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/80 backdrop-blur-sm">
+                        <div className="rounded-lg border border-red-300/30 bg-red-300/10 p-6 text-center">
+                          <p className="mb-4 text-sm text-red-100">Tem certeza que deseja deletar esta barbearia?</p>
+                          <div className="flex gap-3 justify-center">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setShowDeleteConfirm(null)}
+                              className="border-white/20 text-white hover:bg-white/10"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleDelete(barbershop.id)}
+                              disabled={deleteMutation.isPending}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Deletar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -162,91 +280,99 @@ export default function BarbershopsPage() {
 
         <Card className="border-white/10 bg-white/5">
           <CardHeader>
-            <CardTitle className="text-xl text-white">Criar barbearia</CardTitle>
+            <CardTitle className="text-lg text-white">
+              {editingId ? "Editar Barbearia" : "Nova Barbearia"}
+            </CardTitle>
             <CardDescription className="text-zinc-400">
-              Preencha os dados para registar uma nova barbearia.
+              {editingId ? "Atualize os dados da barbearia" : "Preencha os dados para criar uma nova barbearia"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {feedback && (
-              <div className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">
-                {feedback}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome da barbearia *</Label>
+            <div>
+              <Label htmlFor="name" className="text-white">
+                Nome da Barbearia *
+              </Label>
               <Input
                 id="name"
+                placeholder="Ex: Barbearia Premium"
                 value={form.name}
-                onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))}
-                placeholder="Ex: Barbearia Central"
-                className="h-10 rounded-lg border-white/10 bg-black/20"
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
+            <div>
+              <Label htmlFor="description" className="text-white">
+                Descrição
+              </Label>
               <Textarea
                 id="description"
+                placeholder="Descrição da barbearia..."
                 value={form.description}
-                onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
-                placeholder="Descreva sua barbearia..."
-                className="rounded-lg border-white/10 bg-black/20"
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
                 rows={3}
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={form.phone}
-                  onChange={(e) => setForm((current) => ({ ...current, phone: e.target.value }))}
-                  placeholder="(11) 99999-9999"
-                  className="h-10 rounded-lg border-white/10 bg-black/20"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((current) => ({ ...current, email: e.target.value }))}
-                  placeholder="contato@barbearia.com"
-                  className="h-10 rounded-lg border-white/10 bg-black/20"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
+            <div>
+              <Label htmlFor="phone" className="text-white">
+                Telefone
+              </Label>
               <Input
-                id="address"
-                value={form.address}
-                onChange={(e) => setForm((current) => ({ ...current, address: e.target.value }))}
-                placeholder="Rua Principal, 123"
-                className="h-10 rounded-lg border-white/10 bg-black/20"
+                id="phone"
+                placeholder="Ex: +55 11 98765-4321"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
               />
             </div>
 
-            <Button
-              onClick={handleCreate}
-              disabled={createMutation.isPending}
-              className="w-full rounded-lg bg-amber-300 text-stone-950 hover:bg-amber-200"
-            >
-              {createMutation.isPending ? (
-                "A criar..."
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar barbearia
-                </>
+            <div>
+              <Label htmlFor="email" className="text-white">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Ex: contato@barbearia.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="address" className="text-white">
+                Endereço
+              </Label>
+              <Input
+                id="address"
+                placeholder="Ex: Rua Principal, 123, São Paulo"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                className="mt-1 border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={editingId ? handleUpdate : handleCreate}
+                disabled={isSubmitting}
+                className="flex-1 bg-amber-600 hover:bg-amber-700"
+              >
+                {isSubmitting ? "Processando..." : editingId ? "Atualizar" : "Criar"}
+              </Button>
+              {editingId && (
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               )}
-            </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

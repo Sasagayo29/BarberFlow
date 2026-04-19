@@ -62,3 +62,18 @@
 - [ ] Documentar arquitetura e fluxos de permissão
 - [ ] Documentar guia de uso completo
 - [ ] Documentar hospedagem, banco de dados e configurações
+
+
+## Fase 4: Edição de Barbearias e Perfil do Utilizador
+
+- [x] Criar página de edição de barbearias com formulário completo
+- [x] Adicionar botão de deletar barbearia com confirmação
+- [x] Criar página de perfil do utilizador
+- [x] Implementar formulário para mudar nome do utilizador
+- [ ] Implementar upload de foto de perfil (placeholder adicionado)
+- [x] Atualizar saudação para exibir nome customizado
+- [x] Usar procedure tRPC users.update para atualizar perfil do utilizador
+- [x] Usar procedure tRPC barbershops.update para atualizar dados da barbearia
+- [x] Testar edição de barbearias
+- [x] Testar edição de perfil do utilizador
+- [x] Fazer checkpoint final com todas as funcionalidades

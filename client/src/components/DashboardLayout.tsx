@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Building2, CalendarClock, LayoutDashboard, LogOut, PanelLeft, Scissors, Settings, Users } from "lucide-react";
+import { Building2, CalendarClock, LayoutDashboard, LogOut, PanelLeft, Scissors, Settings, Users, User } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -43,6 +43,7 @@ const menuItems: MenuItem[] = [
   { icon: Users, label: "Equipa", path: "/equipa", roles: ["super_admin", "barber_owner"] },
   { icon: Building2, label: "Barbearias", path: "/barbearias", roles: ["super_admin"] },
   { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["super_admin", "barber_owner", "barber_staff"] },
+  { icon: User, label: "Meu Perfil", path: "/perfil", roles: ["super_admin", "barber_admin", "barber_owner", "barber_staff", "client"] },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
