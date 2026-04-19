@@ -12,6 +12,7 @@ import {
   passwordResetTokens,
   services,
   settings,
+  socialMediaSettings,
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -192,6 +193,28 @@ export async function setSetting(
   }
 }
 
+export async function getSocialMediaSettings(barbershopId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(socialMediaSettings).where(eq(socialMediaSettings.barbershopId, barbershopId));
+  return result[0] ?? null;
+}
+
+export async function upsertSocialMediaSettings(barbershopId: number, data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getSocialMediaSettings(barbershopId);
+  
+  if (existing) {
+    await db.update(socialMediaSettings)
+      .set(data)
+      .where(eq(socialMediaSettings.barbershopId, barbershopId));
+  } else {
+    await db.insert(socialMediaSettings).values({ barbershopId, ...data });
+  }
+}
+
 export {
   appointments,
   barberAvailabilityOverrides,
@@ -202,5 +225,6 @@ export {
   passwordResetTokens,
   services,
   settings,
+  socialMediaSettings,
   users,
-};
+}

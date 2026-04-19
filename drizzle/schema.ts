@@ -275,3 +275,32 @@ export type InsertBarberAvailabilityOverride = typeof barberAvailabilityOverride
 
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = typeof appointments.$inferInsert;
+
+
+/**
+ * Configurações de redes sociais por barbearia.
+ * Armazena WhatsApp, Instagram, TikTok e mensagens customizadas.
+ */
+export const socialMediaSettings = mysqlTable(
+  "social_media_settings",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    barbershopId: int("barbershopId").notNull(),
+    whatsappNumber: varchar("whatsappNumber", { length: 32 }),
+    whatsappMessages: text("whatsappMessages"),
+    instagramUrl: varchar("instagramUrl", { length: 500 }),
+    instagramEnabled: tinyint("instagramEnabled").default(0).notNull(),
+    tiktokUrl: varchar("tiktokUrl", { length: 500 }),
+    tiktokEnabled: tinyint("tiktokEnabled").default(0).notNull(),
+    whatsappEnabled: tinyint("whatsappEnabled").default(0).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    barbershopIdx: index("social_media_settings_barbershop_idx").on(table.barbershopId),
+    barbershopUnique: uniqueIndex("social_media_settings_barbershop_unique_idx").on(table.barbershopId),
+  }),
+);
+
+export type SocialMediaSetting = typeof socialMediaSettings.$inferSelect;
+export type InsertSocialMediaSetting = typeof socialMediaSettings.$inferInsert;

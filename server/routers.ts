@@ -19,11 +19,13 @@ import {
   getBarbershopById,
   getBarbershopsByOwner,
   getDb,
+  getSocialMediaSettings,
   getUserByEmail,
   passwordResetTokens,
   services,
   settings,
   updateBarbershopStatus,
+  upsertSocialMediaSettings,
   users,
 } from "./db";
 
@@ -1313,6 +1315,48 @@ export const appRouter = router({
         upcomingAppointments: Number(upcoming[0]?.count ?? 0),
       };
     }),
+  }),
+
+  socialMedia: router({
+    get: publicProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
+      
+      const barbershopId = ctx.user?.barbershopId;
+      if (!barbershopId) return null;
+      
+      return await getSocialMediaSettings(barbershopId);
+    }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          whatsappNumber: z.string().optional(),
+          whatsappMessages: z.string().optional(),
+          instagramUrl: z.string().optional(),
+          instagramEnabled: z.boolean().optional(),
+          tiktokUrl: z.string().optional(),
+          tiktokEnabled: z.boolean().optional(),
+          whatsappEnabled: z.boolean().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        requireManager(ctx.user);
+        const barbershopId = ctx.user?.barbershopId;
+        if (!barbershopId) throw new TRPCError({ code: "FORBIDDEN", message: "Sem barbearia associada." });
+        
+        const updateData: any = {};
+        if (input.whatsappNumber !== undefined) updateData.whatsappNumber = input.whatsappNumber;
+        if (input.whatsappMessages !== undefined) updateData.whatsappMessages = input.whatsappMessages;
+        if (input.instagramUrl !== undefined) updateData.instagramUrl = input.instagramUrl;
+        if (input.instagramEnabled !== undefined) updateData.instagramEnabled = Number(input.instagramEnabled);
+        if (input.tiktokUrl !== undefined) updateData.tiktokUrl = input.tiktokUrl;
+        if (input.tiktokEnabled !== undefined) updateData.tiktokEnabled = Number(input.tiktokEnabled);
+        if (input.whatsappEnabled !== undefined) updateData.whatsappEnabled = Number(input.whatsappEnabled);
+        
+        await upsertSocialMediaSettings(barbershopId, updateData);
+        return { success: true };
+      }),
   }),
 });
 

@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SocialMediaButtons } from "@/components/SocialMediaButtons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,6 +122,11 @@ export default function Home() {
                   </CardHeader>
                 </Card>
               ))}
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <p className="mb-4 text-sm text-zinc-400">Contacte-nos atraves das nossas redes sociais:</p>
+              <SocialMediaButtons />
             </div>
           </div>
 

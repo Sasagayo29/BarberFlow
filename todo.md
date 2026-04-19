@@ -73,13 +73,13 @@
 - [x] Testar edição de barbearias
 - [x] Testar edição de perfil do utilizador
 
-## 📝 Itens Opcionais (Não Bloqueantes)
+## ✅ Itens Opcionais (Não Bloqueantes)
 
-- [ ] Implementar upload de foto de perfil (placeholder adicionado)
-- [ ] Integração com Stripe para pagamentos
-- [ ] Sistema de notificações por email
-- [ ] Dashboard de analytics avançado
-- [ ] Relatórios PDF exportáveis
+- [ ] Implementar upload real de foto de perfil com S3 (opcional)
+- [ ] Integração com Stripe para pagamentos (futura)
+- [ ] Sistema de notificações por email (futura)
+- [ ] Dashboard de analytics avançado (futura)
+- [ ] Relatórios PDF exportáveis (futura)
 
 ---
 
@@ -102,3 +102,21 @@
 - [x] Implementar funcionalidade de cancelamento
 - [ ] Adicionar confirmação de agendamento por email (opcional)
 - [x] Testar fluxos completos de agendamento
+
+
+## Fase 11: Integração com WhatsApp, Instagram e TikTok
+
+- [x] Criar tabela `social_media_settings` no schema para armazenar configurações
+- [x] Adicionar campos: barbershop_id, whatsapp_number, whatsapp_messages, instagram_url, tiktok_url, enabled_buttons
+- [x] Implementar procedure tRPC para ler configurações de redes sociais
+- [x] Implementar procedure tRPC para atualizar configurações de redes sociais
+- [x] Criar UI de administração para configurar WhatsApp, Instagram e TikTok
+- [x] Implementar formulário para adicionar/editar mensagens WhatsApp
+- [x] Implementar toggle para habilitar/desabilitar cada botão
+- [x] Criar componente de botões de redes sociais para clientes
+- [x] Integrar botões na página inicial (Home/Dashboard)
+- [x] Implementar link WhatsApp com mensagem pré-preenchida
+- [x] Implementar redirecionamento para Instagram
+- [x] Implementar redirecionamento para TikTok
+- [x] Testar fluxos completos de integração
+- [x] Fazer checkpoint final com todas as funcionalidades
