@@ -457,10 +457,25 @@ export const appRouter = router({
             email: users.email,
             phone: users.phone,
             role: users.role,
+            openId: users.openId,
           })
           .from(users)
           .where(eq(users.id, ctx.user.id))
           .limit(1);
+
+        // Se nome foi atualizado, gerar novo JWT com nome atualizado
+        if (input.name && updatedUser[0]) {
+          const newSessionToken = await sdk.createSessionToken(updatedUser[0].openId, {
+            name: updatedUser[0].name || "",
+          });
+          // Definir novo cookie com JWT atualizado
+          ctx.res.cookie("manus-session", newSessionToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 365 * 24 * 60 * 60 * 1000, // 1 ano
+          });
+        }
 
         console.log(`[Profile] Usuário ${ctx.user.id} atualizou seu perfil:`, updates);
         return { success: true, message: "Perfil atualizado com sucesso!", user: updatedUser[0] };
