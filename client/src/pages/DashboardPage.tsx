@@ -46,6 +46,17 @@ function formatMoney(value: number) {
 export default function DashboardPage() {
   const { user } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/" });
   const [, setLocation] = useLocation();
+  
+  // Buscar configurações customizáveis do banco
+  const customizationQuery = trpc.settings.customization.get.useQuery(undefined, {
+    retry: false,
+  });
+  
+  // Extrair valores com tipos corretos
+  const customization = typeof customizationQuery.data === 'object' && customizationQuery.data !== null 
+    ? customizationQuery.data as Record<string, string>
+    : {};
+  
   const summaryQuery = trpc.dashboard.summary.useQuery(undefined, {
     enabled: user?.role === "super_admin" || user?.role === "barber_owner",
     retry: false,
@@ -79,14 +90,14 @@ export default function DashboardPage() {
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-4">
             <Badge className="rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-1 text-[0.7rem] uppercase tracking-[0.3em] text-amber-100">
-              Gestão premium da barbearia
+              {customization.badgeText || "Gestão premium da barbearia"}
             </Badge>
             <div className="space-y-3">
               <h1 className="font-serif text-4xl tracking-tight text-white lg:text-5xl">
-                Bem-vindo, {user?.name ?? "equipa"}
+                {customization.welcomeHeading || "Bem-vindo"}, {user?.name ?? "equipa"}
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-zinc-300 lg:text-base">
-                O painel centraliza agenda, equipa, serviços e indicadores do negócio numa experiência refinada, com leitura clara e foco operacional.
+                {customization.welcomeDescription || "O painel centraliza agenda, equipa, serviços e indicadores do negócio numa experiência refinada, com leitura clara e foco operacional."}
               </p>
             </div>
           </div>

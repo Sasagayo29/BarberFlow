@@ -35,6 +35,9 @@ type CustomizationFormState = {
   primaryColor: string;
   secondaryColor: string;
   welcomeMessage: string;
+  welcomeHeading: string;
+  welcomeDescription: string;
+  badgeText: string;
 };
 
 const initialAvailabilityForm: AvailabilityFormState = {
@@ -54,6 +57,9 @@ const initialCustomizationForm: CustomizationFormState = {
   primaryColor: "#d4af37",
   secondaryColor: "#785c3f",
   welcomeMessage: "Bem-vindo à nossa barbearia",
+  welcomeHeading: "Bem-vindo",
+  welcomeDescription: "O painel centraliza agenda, equipa, serviços e indicadores do negócio numa experiência refinada, com leitura clara e foco operacional.",
+  badgeText: "Gestão premium da barbearia",
 };
 
 function toDateTimeLocalInput(value: number) {
@@ -220,6 +226,9 @@ export default function SettingsPage() {
     customizationMutation.mutate({ key: "primaryColor", value: customizationForm.primaryColor });
     customizationMutation.mutate({ key: "secondaryColor", value: customizationForm.secondaryColor });
     customizationMutation.mutate({ key: "welcomeMessage", value: customizationForm.welcomeMessage });
+    customizationMutation.mutate({ key: "welcomeHeading", value: customizationForm.welcomeHeading });
+    customizationMutation.mutate({ key: "welcomeDescription", value: customizationForm.welcomeDescription });
+    customizationMutation.mutate({ key: "badgeText", value: customizationForm.badgeText });
   }
 
   return (
@@ -345,6 +354,40 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="welcome-heading">Título de Boas-vindas (no Dashboard)</Label>
+              <Input
+                id="welcome-heading"
+                value={customizationForm.welcomeHeading}
+                onChange={(e) => setCustomizationForm((current) => ({ ...current, welcomeHeading: e.target.value }))}
+                placeholder="Bem-vindo"
+                className="h-10 rounded-lg border-white/10 bg-black/20"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="badge-text">Texto do Badge (no Dashboard)</Label>
+              <Input
+                id="badge-text"
+                value={customizationForm.badgeText}
+                onChange={(e) => setCustomizationForm((current) => ({ ...current, badgeText: e.target.value }))}
+                placeholder="Gestão premium da barbearia"
+                className="h-10 rounded-lg border-white/10 bg-black/20"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="welcome-description">Descrição (no Dashboard)</Label>
+              <Textarea
+                id="welcome-description"
+                value={customizationForm.welcomeDescription}
+                onChange={(e) => setCustomizationForm((current) => ({ ...current, welcomeDescription: e.target.value }))}
+                placeholder="O painel centraliza agenda, equipa, serviços e indicadores do negócio..."
+                className="rounded-lg border-white/10 bg-black/20"
+                rows={3}
+              />
             </div>
 
             <div className="space-y-2">
