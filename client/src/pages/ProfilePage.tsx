@@ -28,24 +28,26 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Re-hidratar form quando user muda (após invalidate)
-  // Usar apenas user.id como dependency para evitar loops infinitos
+  // Usar apenas user.id e user.name como dependency
   useEffect(() => {
     if (user) {
-      console.log("[ProfilePage] Atualizando form com dados do user:", user.name);
+      console.log("[ProfilePage] Atualizando form com dados do user:", user.name, user.phone);
       setForm({
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
       });
     }
-  }, [user?.id, user?.name, user?.phone]); // Remover user?.email da dependency
+  }, [user?.id, user?.name, user?.phone]);
 
   const updateMutation = trpc.users.updateOwnProfile.useMutation({
     onSuccess: async () => {
       setFeedback("Perfil atualizado com sucesso!");
       setIsEditing(false);
-      // Aguardar invalidate completar antes de limpar feedback
+      // Invalidar cache E forçar refetch imediato
       await utils.auth.me.invalidate();
+      // Refetch para garantir dados atualizados
+      await utils.auth.me.refetch();
       setTimeout(() => setFeedback(null), 3000);
     },
     onError: (error) => setFeedback(error.message),
@@ -63,11 +65,14 @@ export default function ProfilePage() {
   };
 
   const handleCancel = () => {
-    setForm({
-      name: user?.name || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
-    }); // Re-sync com user atual
+    // Re-sincronizar form com dados atuais do user
+    if (user) {
+      setForm({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
     setIsEditing(false);
     setFeedback(null);
   };
