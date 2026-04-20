@@ -464,8 +464,8 @@ export const appRouter = router({
           .limit(1);
 
         // Se nome foi atualizado, gerar novo JWT com nome atualizado
-        if (input.name && updatedUser[0]) {
-          const newSessionToken = await sdk.createSessionToken(updatedUser[0].openId, {
+        if (input.name && updatedUser[0] && updatedUser[0].openId) {
+          const newSessionToken = await sdk.createSessionToken(updatedUser[0].openId || "", {
             name: updatedUser[0].name || "",
           });
           // Definir novo cookie com JWT atualizado
