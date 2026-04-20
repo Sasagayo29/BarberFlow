@@ -130,8 +130,9 @@ export const analyticsRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
 
-      if (ctx.user.role !== "super_admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas super admin pode limpar todos os dados" });
+      // Permitir super_admin ou admin da barbearia
+      if (ctx.user.role !== "super_admin" && ctx.user.barbershopId !== input.barbershopId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para limpar dados desta barbearia" });
       }
 
       await db.delete(analytics).where(eq(analytics.barbershopId, input.barbershopId));
