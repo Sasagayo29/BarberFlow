@@ -449,8 +449,21 @@ export const appRouter = router({
 
         await db.update(users).set(updates).where(eq(users.id, ctx.user.id));
 
+        // Buscar dados atualizados do usuário
+        const updatedUser = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            phone: users.phone,
+            role: users.role,
+          })
+          .from(users)
+          .where(eq(users.id, ctx.user.id))
+          .limit(1);
+
         console.log(`[Profile] Usuário ${ctx.user.id} atualizou seu perfil:`, updates);
-        return { success: true, message: "Perfil atualizado com sucesso!" };
+        return { success: true, message: "Perfil atualizado com sucesso!", user: updatedUser[0] };
       }),
 
     list: protectedProcedure.query(async ({ ctx }) => {

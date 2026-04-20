@@ -28,21 +28,24 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Re-hidratar form quando user muda (após invalidate)
+  // Usar apenas user.id como dependency para evitar loops infinitos
   useEffect(() => {
     if (user) {
+      console.log("[ProfilePage] Atualizando form com dados do user:", user.name);
       setForm({
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
       });
     }
-  }, [user?.id, user?.name, user?.email, user?.phone]);
+  }, [user?.id, user?.name, user?.phone]); // Remover user?.email da dependency
 
   const updateMutation = trpc.users.updateOwnProfile.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       setFeedback("Perfil atualizado com sucesso!");
       setIsEditing(false);
-      utils.auth.me.invalidate();
+      // Aguardar invalidate completar antes de limpar feedback
+      await utils.auth.me.invalidate();
       setTimeout(() => setFeedback(null), 3000);
     },
     onError: (error) => setFeedback(error.message),
