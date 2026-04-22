@@ -5,13 +5,19 @@ import { trpc } from "@/lib/trpc";
 export default function FloatingContactButtons() {
   const [isOpen, setIsOpen] = useState(false);
   const [socialMedia, setSocialMedia] = useState<any>(null);
-  const settingsQuery = trpc.socialMedia.get.useQuery();
+  
+  const settingsQuery = trpc.socialMedia.get.useQuery(undefined, {
+    retry: false,
+  });
 
   useEffect(() => {
     if (settingsQuery.data) {
       setSocialMedia(settingsQuery.data);
     }
   }, [settingsQuery.data]);
+
+  // Não mostrar se houver erro (usuário não autenticado ou sem barbershop)
+  if (settingsQuery.isError) return null;
 
   if (!socialMedia) return null;
 
