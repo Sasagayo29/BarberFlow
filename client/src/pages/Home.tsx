@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SocialMediaButtons } from "@/components/SocialMediaButtons";
+import FloatingContactButtons from "@/components/FloatingContactButtons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,6 +86,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.14),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(120,92,63,0.18),transparent_24%),linear-gradient(180deg,#0b0a09,#14110f_40%,#0c0b0a)] text-white">
+      <FloatingContactButtons />
       <main className="container py-8 lg:py-12">
         <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
           <div className="space-y-8">

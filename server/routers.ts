@@ -824,11 +824,20 @@ export const appRouter = router({
     update: protectedProcedure
       .input(
         z.object({
-          whatsappNumber: z.string().optional(),
+          whatsappNumber: z.string().refine(
+            (val) => !val || /^\+?[1-9]\d{1,14}$/.test(val.replace(/\D/g, '')),
+            "Número WhatsApp inválido. Use formato internacional (ex: +55 11 99999-9999)"
+          ).optional(),
           whatsappMessages: z.string().optional(),
-          instagramUrl: z.string().optional(),
+          instagramUrl: z.string().refine(
+            (val) => !val || /^(https?:\/\/)?(www\.)?instagram\.com\/[a-zA-Z0-9._-]+\/?$/.test(val),
+            "URL Instagram inválida. Use: https://instagram.com/seu_usuario"
+          ).optional(),
           instagramEnabled: z.boolean().optional(),
-          tiktokUrl: z.string().optional(),
+          tiktokUrl: z.string().refine(
+            (val) => !val || /^(https?:\/\/)?(www\.)?(tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)\/[\w@._-]+\/?/.test(val),
+            "URL TikTok inválida. Use: https://tiktok.com/@seu_usuario"
+          ).optional(),
           tiktokEnabled: z.boolean().optional(),
           whatsappEnabled: z.boolean().optional(),
         }),
