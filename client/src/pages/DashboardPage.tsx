@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { trpc } from "@/lib/trpc";
 import { ArrowRight, CalendarClock, Scissors, ShieldCheck, Users, Database } from "lucide-react";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 const quickLinks = [
   {
@@ -56,6 +57,13 @@ export default function DashboardPage() {
   const customization = typeof customizationQuery.data === 'object' && customizationQuery.data !== null 
     ? customizationQuery.data as Record<string, string>
     : {};
+  
+  // Debug logs
+  useEffect(() => {
+    console.log('[Dashboard] customizationQuery.data:', customizationQuery.data);
+    console.log('[Dashboard] customization:', customization);
+    console.log('[Dashboard] welcomeHeading:', customization.welcomeHeading);
+  }, [customizationQuery.data, customization]);
   
   const summaryQuery = trpc.dashboard.summary.useQuery(undefined, {
     enabled: user?.role === "super_admin" || user?.role === "barber_owner",
