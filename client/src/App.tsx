@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import DashboardLayout from "./components/DashboardLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -16,6 +15,7 @@ import { AdminDataManagement } from "./pages/AdminDataManagement";
 import { ClientBooking } from "./pages/ClientBooking";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ServicesPage from "./pages/ServicesPage";
 import SettingsPage from "./pages/SettingsPage";
 import TeamPage from "./pages/TeamPage";
@@ -49,9 +49,6 @@ function Router() {
       <Route path="/configuracoes">
         {() => <DashboardShell component={SettingsPage} />}
       </Route>
-      <Route path="/barbearias">
-        {() => <DashboardShell component={BarbershopsPage} />}
-      </Route>
       <Route path="/perfil">
         {() => <DashboardShell component={ProfilePage} />}
       </Route>
@@ -63,6 +60,9 @@ function Router() {
       </Route>
       <Route path="/relatorios">
         {() => <DashboardShell component={ReportsPage} />}
+      </Route>
+      <Route path="/admin/super-dashboard">
+        {() => <DashboardShell component={SuperAdminDashboard} />}
       </Route>
       <Route path="/meu-painel" component={ClientDashboard} />
       <Route path="/admin/dados" component={AdminDataManagement} />
@@ -78,14 +78,13 @@ function Router() {
 
 function App() {
   return (
-    <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster />
+    <ThemeProvider>
+      <TooltipProvider>
+        <ErrorBoundary>
           <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+        </ErrorBoundary>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }
 

@@ -369,3 +369,41 @@ export const analytics = mysqlTable(
 );
 export type Analytics = typeof analytics.$inferSelect;
 export type InsertAnalytics = typeof analytics.$inferInsert;
+
+/**
+ * Permissões Granulares - Controle fino de acesso por feature/módulo.
+ * Permite definir quais roles têm acesso a quais funcionalidades.
+ */
+export const permissionsEnum = mysqlEnum("permission", [
+  "view_dashboard",
+  "manage_appointments",
+  "manage_services",
+  "manage_team",
+  "manage_clients",
+  "view_analytics",
+  "manage_payments",
+  "manage_settings",
+  "manage_users",
+  "manage_barbershops",
+  "view_reports",
+  "manage_social_media",
+]);
+
+export const rolePermissions = mysqlTable(
+  "role_permissions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    role: userRoleEnum.notNull(),
+    permission: permissionsEnum.notNull(),
+    description: text("description"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    rolePermissionUnique: uniqueIndex("role_permission_unique_idx").on(table.role, table.permission),
+    roleIdx: index("role_permissions_role_idx").on(table.role),
+    permissionIdx: index("role_permissions_permission_idx").on(table.permission),
+  }),
+);
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = typeof rolePermissions.$inferInsert;

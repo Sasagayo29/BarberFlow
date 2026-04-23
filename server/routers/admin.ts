@@ -1,8 +1,8 @@
 import { router, protectedProcedure, adminProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
-import { users, appointments, payments, services, barbershops } from "../../drizzle/schema";
-import { eq, sql } from "drizzle-orm";
+import { users, appointments, payments, services, barbershops, rolePermissions } from "../../drizzle/schema";
+import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
 
 export const adminRouter = router({
@@ -255,6 +255,43 @@ export const adminRouter = router({
       } catch (error) {
         console.error(`[Admin] Erro ao limpar analytics:`, error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao limpar dados de analytics" });
+      }
+    }),
+
+  // Obter permissoes de um role
+  getRolePermissions: adminProcedure
+    .input(z.object({ role: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponivel" });
+
+      const permissions = await db
+        .select({ permission: rolePermissions.permission, description: rolePermissions.description })
+        .from(rolePermissions)
+        .where(eq(rolePermissions.role, input.role as any));
+
+      return permissions;
+    }),
+
+  // Atribuir permissao a um role
+  assignPermission: adminProcedure
+    .input(z.object({ role: z.string(), permission: z.string(), description: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponivel" });
+
+      try {
+        await db.insert(rolePermissions).values({
+          role: input.role as any,
+          permission: input.permission as any,
+          description: input.description,
+        });
+
+        console.log(`[Admin] ${ctx.user.name} atribuiu permissao ${input.permission} ao role ${input.role}`);
+        return { success: true, message: "Permissao atribuida com sucesso" };
+      } catch (error) {
+        console.error(`[Admin] Erro ao atribuir permissao:`, error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atribuir permissao" });
       }
     }),
 });
