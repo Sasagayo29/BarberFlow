@@ -216,7 +216,9 @@ export const appRouter = router({
 
         const token = await sdk.createSessionToken(user.openId, { name: user.name });
 
-        ctx.res.setHeader("Set-Cookie", `${COOKIE_NAME}=${token}; ${getSessionCookieOptions().toString()}`);
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        const cookieString = `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=None; Secure`;
+        ctx.res.setHeader("Set-Cookie", cookieString);
 
         return { success: true };
       }),
@@ -299,7 +301,9 @@ export const appRouter = router({
         if (updatedUser) {
           const newToken = await sdk.createSessionToken(updatedUser.openId, { name: updatedUser.name });
 
-          ctx.res.setHeader("Set-Cookie", `${COOKIE_NAME}=${newToken}; ${getSessionCookieOptions().toString()}`);
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          const cookieString = `${COOKIE_NAME}=${newToken}; Path=/; HttpOnly; SameSite=None; Secure`;
+          ctx.res.setHeader("Set-Cookie", cookieString);
 
           return {
             success: true,
