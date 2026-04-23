@@ -50,7 +50,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     const values: InsertUser = {
       openId: user.openId,
       name: user.name ?? user.email ?? "Utilizador Manus",
-      email: user.email ?? `${user.openId}@oauth.local`,
+      email: user.email ?? `${user.openId.replace(/[^a-z0-9]/gi, '_')}@oauth.local`,
       phone: user.phone ?? null,
       passwordHash: user.passwordHash ?? null,
       loginMethod: user.loginMethod ?? "manus",
@@ -60,10 +60,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       lastSignedIn: user.lastSignedIn ?? now,
     };
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: {
+    // Usar openId como chave única para upsert (não email, pois pode ser vazio)
+    const existing = await db.select().from(users).where(eq(users.openId, user.openId)).limit(1);
+    
+    if (existing.length > 0) {
+      // Atualizar usuário existente
+      await db.update(users).set({
         name: values.name,
-        email: values.email,
         phone: values.phone,
         passwordHash: values.passwordHash,
         loginMethod: values.loginMethod,
@@ -71,8 +74,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
         status: values.status,
         avatarUrl: values.avatarUrl,
         lastSignedIn: values.lastSignedIn,
-      },
-    });
+        // NÃO atualizar email se já existe (evita conflito)
+      }).where(eq(users.openId, user.openId));
+    } else {
+      // Inserir novo usuário
+      await db.insert(users).values(values);
+    }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;

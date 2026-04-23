@@ -187,7 +187,7 @@ export const appRouter = router({
 
     logout: protectedProcedure.mutation(async ({ ctx }) => {
       if (!ctx.res) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      ctx.res.clearCookie(COOKIE_NAME, getSessionCookieOptions());
+      ctx.res.clearCookie(COOKIE_NAME, getSessionCookieOptions(ctx.req));
       return { success: true };
     }),
 
