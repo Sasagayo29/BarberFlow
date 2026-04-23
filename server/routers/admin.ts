@@ -4,6 +4,8 @@ import { getDb } from "../db";
 import { users, appointments, payments, services, barbershops } from "../../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { scryptSync, randomBytes } from "crypto";
+import { nanoid } from "nanoid";
 
 export const adminRouter = router({
   // Obter estatísticas gerais
@@ -256,5 +258,95 @@ export const adminRouter = router({
         console.error(`[Admin] Erro ao limpar analytics:`, error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao limpar dados de analytics" });
       }
+    }),
+
+  // Listar usuários
+  listUsers: adminProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+
+    const allUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        phone: users.phone,
+        role: users.role,
+        status: users.status,
+        createdAt: users.createdAt,
+        lastSignedIn: users.lastSignedIn,
+      })
+      .from(users)
+      .orderBy(users.createdAt);
+
+    return allUsers;
+  }),
+
+  // Criar usuário
+  createUser: adminProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+        password: z.string().min(8),
+        name: z.string().min(3),
+        phone: z.string().optional(),
+        role: z.enum(["super_admin", "barber_admin", "barber_owner", "barber_staff", "client"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+
+      const existing = await db.select().from(users).where(eq(users.email, input.email.toLowerCase())).limit(1);
+      if (existing.length > 0) {
+        throw new TRPCError({ code: "CONFLICT", message: "Já existe uma conta com este e-mail" });
+      }
+
+      function hashPassword(password: string) {
+        const salt = randomBytes(16).toString("hex");
+        const hash = scryptSync(password, salt, 64).toString("hex");
+        return `${salt}:${hash}`;
+      }
+
+      const openId = `local_${nanoid(18)}`;
+      await db.insert(users).values({
+        openId,
+        email: input.email.toLowerCase(),
+        name: input.name,
+        phone: input.phone,
+        passwordHash: hashPassword(input.password),
+        role: input.role,
+        createdByUserId: ctx.user.id,
+      });
+
+      return { success: true, message: "Usuário criado com sucesso" };
+    }),
+
+  // Atualizar usuário
+  updateUser: adminProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        name: z.string().min(3).optional(),
+        phone: z.string().optional(),
+        role: z.enum(["super_admin", "barber_admin", "barber_owner", "barber_staff", "client"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indisponível" });
+
+      const updates: Record<string, any> = {};
+      if (input.name) updates.name = input.name;
+      if (input.phone) updates.phone = input.phone;
+      if (input.role) updates.role = input.role;
+
+      if (Object.keys(updates).length === 0) {
+        return { success: true, message: "Nenhuma alteração foi feita" };
+      }
+
+      await db.update(users).set(updates).where(eq(users.id, input.id));
+
+      return { success: true, message: "Usuário atualizado com sucesso" };
     }),
 });
