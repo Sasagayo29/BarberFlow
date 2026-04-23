@@ -16,6 +16,7 @@ import { ClientBooking } from "./pages/ClientBooking";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SelectBarbershopPage from "./pages/SelectBarbershopPage";
 import ServicesPage from "./pages/ServicesPage";
 import SettingsPage from "./pages/SettingsPage";
 import TeamPage from "./pages/TeamPage";
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/admin/super-dashboard">
         {() => <DashboardShell component={SuperAdminDashboard} />}
       </Route>
+      <Route path="/select-barbershop" component={SelectBarbershopPage} />
       <Route path="/meu-painel" component={ClientDashboard} />
       <Route path="/admin/dados" component={AdminDataManagement} />
       <Route path="/agendar" component={ClientBooking} />

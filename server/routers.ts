@@ -588,21 +588,24 @@ export const appRouter = router({
 
   settings: router({
     customization: router({
-      get: publicProcedure.query(async () => {
+      get: publicProcedure.query(async ({ ctx }) => {
         const db = await getDb();
         if (!db) return {};
 
-        const setting = await db.query.settings.findFirst({
-          where: (settings, { isNotNull }) => isNotNull(settings.customization),
-        });
-
-        if (!setting || !setting.customization) return {};
-
-        try {
-          return JSON.parse(setting.customization);
-        } catch {
-          return {};
+        if (ctx.user?.barbershopId) {
+          const setting = await db.query.settings.findFirst({
+            where: and(eq(settings.barbershopId, ctx.user.barbershopId), sql`${settings.customization} IS NOT NULL`),
+          });
+          if (setting?.customization) {
+            try {
+              return JSON.parse(setting.customization);
+            } catch {
+              return {};
+            }
+          }
         }
+
+        return {};
       }),
 
       set: protectedProcedure
@@ -612,6 +615,15 @@ export const appRouter = router({
             badgeText: z.string().optional(),
             welcomeDescription: z.string().optional(),
             welcomeMessage: z.string().optional(),
+            primaryColor: z.string().optional(),
+            secondaryColor: z.string().optional(),
+            theme: z.enum(["dark", "light"]).optional(),
+            companyName: z.string().optional(),
+            companyPhone: z.string().optional(),
+            companyEmail: z.string().optional(),
+            companyAddress: z.string().optional(),
+            logoUrl: z.string().optional(),
+            customCss: z.string().optional(),
           }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -624,13 +636,22 @@ export const appRouter = router({
           }
 
           const existing = await db.query.settings.findFirst({
-            where: eq(settings.barbershopId, barbershopId),
+            where: and(eq(settings.barbershopId, barbershopId), sql`${settings.customization} IS NOT NULL`),
           });
 
-          const customizationJson = JSON.stringify(input);
+          let mergedData = {};
+          if (existing?.customization) {
+            try {
+              mergedData = JSON.parse(existing.customization);
+            } catch {
+              mergedData = {};
+            }
+          }
+
+          const customizationJson = JSON.stringify({ ...mergedData, ...input });
 
           if (existing) {
-            await db.update(settings).set({ customization: customizationJson }).where(eq(settings.barbershopId, barbershopId));
+            await db.update(settings).set({ customization: customizationJson }).where(eq(settings.id, existing.id));
           } else {
             await db.insert(settings).values({
               barbershopId,
@@ -873,7 +894,46 @@ export const appRouter = router({
 
         return { success: true };
       }),
+   }),
+  barbershop: router({
+    listAll: publicProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const allBarbershops = await db
+        .select({
+          id: barbershops.id,
+          name: barbershops.name,
+          description: barbershops.description,
+          status: barbershops.status,
+          phone: barbershops.phone,
+          email: barbershops.email,
+          address: barbershops.address,
+          logoUrl: barbershops.logoUrl,
+        })
+        .from(barbershops)
+        .where(eq(barbershops.status, "active"))
+        .orderBy(asc(barbershops.name));
+      return allBarbershops;
+    }),
+  }),
+  client: router({
+    associateBarbershop: protectedProcedure
+      .input(z.object({ barbershopId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        if (ctx.user.role !== "client") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas clientes podem se associar a barbearias" });
+        }
+        try {
+          await db.update(users).set({ barbershopId: input.barbershopId }).where(eq(users.id, ctx.user.id));
+          console.log(`[Client] ${ctx.user.name} se associou à barbearia ${input.barbershopId}`);
+          return { success: true, message: "Barbearia associada com sucesso" };
+        } catch (error) {
+          console.error(`[Client] Erro ao associar barbearia:`, error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao associar barbearia" });
+        }
+      }),
   }),
 });
-
 export type AppRouter = typeof appRouter;

@@ -38,6 +38,8 @@ type CustomizationFormState = {
   welcomeHeading: string;
   welcomeDescription: string;
   badgeText: string;
+  logoUrl: string;
+  customCss: string;
 };
 
 const initialAvailabilityForm: AvailabilityFormState = {
@@ -60,6 +62,8 @@ const initialCustomizationForm: CustomizationFormState = {
   welcomeHeading: "Bem-vindo",
   welcomeDescription: "O painel centraliza agenda, equipa, serviços e indicadores do negócio numa experiência refinada, com leitura clara e foco operacional.",
   badgeText: "Gestão premium da barbearia",
+  logoUrl: "",
+  customCss: "",
 };
 
 function toDateTimeLocalInput(value: number) {
@@ -218,17 +222,21 @@ export default function SettingsPage() {
       return;
     }
 
-    customizationMutation.mutate({ key: "companyName", value: customizationForm.companyName });
-    customizationMutation.mutate({ key: "companyPhone", value: customizationForm.companyPhone });
-    customizationMutation.mutate({ key: "companyEmail", value: customizationForm.companyEmail });
-    customizationMutation.mutate({ key: "companyAddress", value: customizationForm.companyAddress });
-    customizationMutation.mutate({ key: "theme", value: customizationForm.theme });
-    customizationMutation.mutate({ key: "primaryColor", value: customizationForm.primaryColor });
-    customizationMutation.mutate({ key: "secondaryColor", value: customizationForm.secondaryColor });
-    customizationMutation.mutate({ key: "welcomeMessage", value: customizationForm.welcomeMessage });
-    customizationMutation.mutate({ key: "welcomeHeading", value: customizationForm.welcomeHeading });
-    customizationMutation.mutate({ key: "welcomeDescription", value: customizationForm.welcomeDescription });
-    customizationMutation.mutate({ key: "badgeText", value: customizationForm.badgeText });
+    customizationMutation.mutate({
+      companyName: customizationForm.companyName,
+      companyPhone: customizationForm.companyPhone,
+      companyEmail: customizationForm.companyEmail,
+      companyAddress: customizationForm.companyAddress,
+      theme: customizationForm.theme,
+      primaryColor: customizationForm.primaryColor,
+      secondaryColor: customizationForm.secondaryColor,
+      welcomeMessage: customizationForm.welcomeMessage,
+      welcomeHeading: customizationForm.welcomeHeading,
+      welcomeDescription: customizationForm.welcomeDescription,
+      badgeText: customizationForm.badgeText,
+      logoUrl: customizationForm.logoUrl,
+      customCss: customizationForm.customCss,
+    });
   }
 
   return (
@@ -400,6 +408,32 @@ export default function SettingsPage() {
                 className="rounded-lg border-white/10 bg-black/20"
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="logo-url">URL do Logo</Label>
+              <Input
+                id="logo-url"
+                type="url"
+                value={customizationForm.logoUrl}
+                onChange={(e) => setCustomizationForm((current) => ({ ...current, logoUrl: e.target.value }))}
+                placeholder="https://cdn.example.com/logo.png"
+                className="h-10 rounded-lg border-white/10 bg-black/20"
+              />
+              <p className="text-xs text-zinc-500">Cole a URL do logo da sua barbearia. Use manus-upload-file para fazer upload.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="custom-css">CSS Customizado</Label>
+              <Textarea
+                id="custom-css"
+                value={customizationForm.customCss}
+                onChange={(e) => setCustomizationForm((current) => ({ ...current, customCss: e.target.value }))}
+                placeholder="/* Adicione CSS customizado aqui */\n.custom-class { color: red; }"
+                className="rounded-lg border-white/10 bg-black/20 font-mono text-sm"
+                rows={5}
+              />
+              <p className="text-xs text-zinc-500">CSS que será aplicado globalmente no painel e landing page.</p>
             </div>
 
             <Button
