@@ -260,11 +260,15 @@ class SDKServer {
     // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
+    console.log("[Auth] Cookie header:", req.headers.cookie ? "present" : "missing");
+    console.log("[Auth] Session cookie:", sessionCookie ? "found" : "not found");
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
+      console.log("[Auth] Session verification failed");
       throw ForbiddenError("Invalid session cookie");
     }
+    console.log("[Auth] Session verified, openId:", session.openId);
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
@@ -272,8 +276,10 @@ class SDKServer {
 
     // If user not in DB, sync from OAuth server automatically
     if (!user) {
+      console.log("[Auth] User not found in DB, syncing from OAuth");
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+        console.log("[Auth] OAuth user info:", userInfo.openId);
         await db.upsertUser({
           openId: userInfo.openId,
           name: userInfo.name || null,
@@ -282,10 +288,13 @@ class SDKServer {
           lastSignedIn: signedInAt,
         });
         user = await db.getUserByOpenId(userInfo.openId);
+        console.log("[Auth] User synced from OAuth:", user?.id);
       } catch (error) {
         console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("Failed to sync user info");
       }
+    } else {
+      console.log("[Auth] User found in DB:", user.id);
     }
 
     if (!user) {
