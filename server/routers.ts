@@ -214,14 +214,7 @@ export const appRouter = router({
 
         await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, user.id));
 
-        const token = sdk.createJWT({
-          id: user.id,
-          openId: user.openId,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          barbershopId: user.barbershopId,
-        });
+        const token = await sdk.createSessionToken(user.openId, { name: user.name });
 
         ctx.res.setHeader("Set-Cookie", `${COOKIE_NAME}=${token}; ${getSessionCookieOptions().toString()}`);
 
@@ -304,14 +297,7 @@ export const appRouter = router({
         });
 
         if (updatedUser) {
-          const newToken = sdk.createJWT({
-            id: updatedUser.id,
-            openId: updatedUser.openId,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            role: updatedUser.role,
-            barbershopId: updatedUser.barbershopId,
-          });
+          const newToken = await sdk.createSessionToken(updatedUser.openId, { name: updatedUser.name });
 
           ctx.res.setHeader("Set-Cookie", `${COOKIE_NAME}=${newToken}; ${getSessionCookieOptions().toString()}`);
 
