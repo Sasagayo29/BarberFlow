@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Loader2, MapPin, Phone, Mail } from "lucide-react";
 
 export default function SelectBarbershopPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [selectedBarbershopId, setSelectedBarbershopId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -140,7 +140,7 @@ export default function SelectBarbershopPage() {
                   "Continuar"
                 )}
               </Button>
-              <Button variant="outline" onClick={() => navigate("/dashboard")} size="lg">
+              <Button variant="outline" onClick={() => navigate("/dashboard", { replace: true })} size="lg">
                 Cancelar
               </Button>
             </div>
@@ -152,7 +152,7 @@ export default function SelectBarbershopPage() {
           <Card className="text-center py-12">
             <CardContent>
               <p className="text-muted-foreground mb-4">Nenhuma barbearia disponível no momento</p>
-              <Button onClick={() => navigate("/dashboard")}>Voltar ao Dashboard</Button>
+              <Button onClick={() => navigate("/dashboard", { replace: true })}>Voltar ao Dashboard</Button>
             </CardContent>
           </Card>
         )}
