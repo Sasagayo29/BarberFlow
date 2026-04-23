@@ -274,43 +274,6 @@ export const appRouter = router({
 
         return { success: true };
       }),
-
-    createSuperAdmin: publicProcedure
-      .input(
-        z.object({
-          email: z.string().email(),
-          password: z.string().min(8).max(128),
-          name: z.string().min(3).max(180),
-          adminSecret: z.string(),
-        }),
-      )
-      .mutation(async ({ input }) => {
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Base de dados indisponível." });
-
-        const secret = process.env.ADMIN_SECRET || "admin-secret-key";
-        if (input.adminSecret !== secret) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Secret inválido." });
-        }
-
-        const email = input.email.trim().toLowerCase();
-        const existing = await getUserByEmail(email);
-        if (existing) {
-          throw new TRPCError({ code: "CONFLICT", message: "Já existe uma conta com este e-mail." });
-        }
-
-        const openId = `local_${nanoid(18)}`;
-        await db.insert(users).values({
-          openId,
-          name: input.name.trim(),
-          email,
-          passwordHash: hashPassword(input.password),
-          role: "super_admin",
-        });
-
-        return { success: true, message: "Super admin criado com sucesso!" };
-      }),
-
   }),
 
   users: router({

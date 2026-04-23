@@ -234,7 +234,7 @@ export const appointments = mysqlTable(
     cancelledAt: timestamp("cancelledAt"),
     cancellationReason: varchar("cancellationReason", { length: 255 }),
     completedAt: timestamp("completedAt"),
-    reminderSent: tinyint("reminder_sent").default(0).notNull(),
+    reminderSent: tinyint("reminderSent").default(0).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },

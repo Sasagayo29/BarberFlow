@@ -16,7 +16,6 @@ import { AdminDataManagement } from "./pages/AdminDataManagement";
 import { ClientBooking } from "./pages/ClientBooking";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
-import UsersManagementPage from "./pages/UsersManagementPage";
 import ServicesPage from "./pages/ServicesPage";
 import SettingsPage from "./pages/SettingsPage";
 import TeamPage from "./pages/TeamPage";
@@ -64,9 +63,6 @@ function Router() {
       </Route>
       <Route path="/relatorios">
         {() => <DashboardShell component={ReportsPage} />}
-      </Route>
-      <Route path="/admin/usuarios">
-        {() => <DashboardShell component={UsersManagementPage} />}
       </Route>
       <Route path="/meu-painel" component={ClientDashboard} />
       <Route path="/admin/dados" component={AdminDataManagement} />
