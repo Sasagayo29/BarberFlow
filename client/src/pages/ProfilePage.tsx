@@ -60,7 +60,7 @@ export default function ProfilePage() {
     }
     updateMutation.mutate({
       name: form.name.trim(),
-      phone: form.phone.trim() === "" ? null : form.phone.trim(),
+      phone: form.phone.trim() === "" ? undefined : form.phone.trim(),
     });
   };
 
