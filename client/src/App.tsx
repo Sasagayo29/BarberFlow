@@ -65,6 +65,9 @@ function Router() {
       <Route path="/admin/super-dashboard">
         {() => <DashboardShell component={SuperAdminDashboard} />}
       </Route>
+      <Route path="/barbearias">
+        {() => <DashboardShell component={BarbershopsPage} />}
+      </Route>
       <Route path="/select-barbershop" component={SelectBarbershopPage} />
       <Route path="/meu-painel" component={ClientDashboard} />
       <Route path="/admin/dados" component={AdminDataManagement} />

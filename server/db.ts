@@ -69,7 +69,6 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (existing.length > 0) {
       // Atualizar usuário existente
       const updateData: any = {
-        name: values.name,
         phone: values.phone,
         passwordHash: values.passwordHash,
         loginMethod: values.loginMethod,
@@ -77,6 +76,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
         avatarUrl: values.avatarUrl,
         lastSignedIn: values.lastSignedIn,
       };
+      // Só atualizar name se foi explicitamente passado
+      if (user.name !== undefined) {
+        updateData.name = values.name;
+      }
       // Só atualizar role se foi explicitamente passado (não é o padrão)
       if (user.role !== undefined) {
         updateData.role = values.role;
