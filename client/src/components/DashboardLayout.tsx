@@ -74,31 +74,10 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="flex flex-col items-center gap-6">
-              <h1 className="text-2xl font-semibold tracking-tight text-center">
-                Entrar para continuar
-              </h1>
-
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              O acesso a esta área requer autenticação. Continue para iniciar a sessão e entrar no painel da barbearia.
-            </p>
-          </div>
-              <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
-          >
-            Entrar com sessão Manus
-          </Button>
-
-        </div>
-      </div>
-    );
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+    return null;
   }
 
   return (

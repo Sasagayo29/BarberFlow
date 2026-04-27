@@ -263,9 +263,7 @@ export default function Home() {
                 </div>
               ) : null}
 
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-zinc-400">
-                Também é possível continuar com a sessão Manus já autenticada. Se já tiver sessão ativa, será encaminhado automaticamente para o painel.
-              </div>
+
             </CardContent>
           </Card>
         </section>
