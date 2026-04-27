@@ -433,6 +433,40 @@ export const appRouter = router({
 
       return { success: true };
     }),
+
+    linkClient: protectedProcedure
+      .input(z.object({ barbershopId: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        if (ctx.user.role !== "client") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas clientes podem se vincular a barbearias" });
+        }
+
+        const shop = await getBarbershopById(input.barbershopId);
+        if (!shop) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia nao encontrada" });
+
+        await db.update(users).set({ barbershopId: input.barbershopId }).where(eq(users.id, ctx.user.id));
+
+        return { success: true, barbershopId: input.barbershopId };
+      }),
+
+    listPublic: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      return await db
+        .select({
+          id: barbershops.id,
+          name: barbershops.name,
+          phone: barbershops.phone,
+          email: barbershops.email,
+          address: barbershops.address,
+        })
+        .from(barbershops)
+        .where(eq(barbershops.status, "active"));
+    }),
   }),
 
   services: router({

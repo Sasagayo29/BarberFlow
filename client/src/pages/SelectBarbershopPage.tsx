@@ -9,24 +9,24 @@ import { Loader2, MapPin, Phone, Mail } from "lucide-react";
 export default function SelectBarbershopPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  const [selectedBarbershopId, setSelectedBarbershopId] = useState<number | null>(null);
+  const [selectedBarbershopId, setSelectedBarbershopId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Buscar todas as barbearias ativas
-  const { data: barbershops, isLoading: isLoadingBarbershops } = trpc.barbershop.listAll.useQuery();
+  const { data: barbershops, isLoading: isLoadingBarbershops } = trpc.barbershops.listPublic.useQuery();
 
-  // Mutation para associar cliente à barbearia
-  const associateMutation = trpc.client.associateBarbershop.useMutation({
+  // Mutation para vincular cliente à barbearia
+  const linkMutation = trpc.barbershops.linkClient.useMutation({
     onSuccess: () => {
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     },
     onError: (error) => {
-      console.error("Erro ao associar barbearia:", error);
-      alert("Erro ao associar barbearia. Tente novamente.");
+      console.error("Erro ao vincular barbearia:", error);
+      alert("Erro ao vincular barbearia. Tente novamente.");
     },
   });
 
-  const handleAssociate = async () => {
+  const handleLink = async () => {
     if (!selectedBarbershopId) {
       alert("Selecione uma barbearia");
       return;
@@ -34,7 +34,7 @@ export default function SelectBarbershopPage() {
 
     setIsLoading(true);
     try {
-      await associateMutation.mutateAsync({ barbershopId: selectedBarbershopId });
+      await linkMutation.mutateAsync({ barbershopId: selectedBarbershopId });
     } finally {
       setIsLoading(false);
     }
@@ -79,15 +79,8 @@ export default function SelectBarbershopPage() {
                   onClick={() => setSelectedBarbershopId(barbershop.id)}
                 >
                   <CardHeader>
-                    {barbershop.logoUrl && (
-                      <img
-                        src={barbershop.logoUrl}
-                        alt={barbershop.name}
-                        className="w-16 h-16 rounded-lg mb-2 object-cover"
-                      />
-                    )}
                     <CardTitle>{barbershop.name}</CardTitle>
-                    <CardDescription>{barbershop.description || "Barbearia"}</CardDescription>
+                    <CardDescription>Barbearia</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {barbershop.address && (
@@ -108,17 +101,6 @@ export default function SelectBarbershopPage() {
                         <span>{barbershop.email}</span>
                       </div>
                     )}
-                    <div className="pt-2">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                          barbershop.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {barbershop.status === "active" ? "Ativa" : "Inativa"}
-                      </span>
-                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -127,14 +109,14 @@ export default function SelectBarbershopPage() {
             {/* Action Button */}
             <div className="flex gap-4 justify-center">
               <Button
-                onClick={handleAssociate}
-                disabled={!selectedBarbershopId || isLoading || associateMutation.isPending}
+                onClick={handleLink}
+                disabled={!selectedBarbershopId || isLoading || linkMutation.isPending}
                 size="lg"
               >
-                {isLoading || associateMutation.isPending ? (
+                {isLoading || linkMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Associando...
+                    Vinculando...
                   </>
                 ) : (
                   "Continuar"
