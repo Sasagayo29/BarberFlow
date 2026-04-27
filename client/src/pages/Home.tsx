@@ -41,7 +41,8 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [registerForm, setRegisterForm] = useState({ name: "", phone: "", email: "", password: "" });
+  const [registerForm, setRegisterForm] = useState({ name: "", phone: "", email: "", password: "", barbershopId: "" });
+  const [barbershopSearch, setBarbershopSearch] = useState("");
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -53,10 +54,17 @@ export default function Home() {
     onError: (error) => setFeedback(error.message),
   });
 
+  const { data: barbershops = [] } = trpc.barbershops.listPublic.useQuery();
+  const filteredBarbershops = useMemo(
+    () => barbershops.filter((b) => b.name.toLowerCase().includes(barbershopSearch.toLowerCase())),
+    [barbershops, barbershopSearch],
+  );
+
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: () => {
       setFeedback("Conta criada com sucesso. Pode iniciar sessão de imediato.");
-      setRegisterForm({ name: "", phone: "", email: "", password: "" });
+      setRegisterForm({ name: "", phone: "", email: "", password: "", barbershopId: "" });
+      setBarbershopSearch("");
     },
     onError: (error) => setFeedback(error.message),
   });
@@ -218,10 +226,47 @@ export default function Home() {
                       className="h-12 rounded-2xl border-white/10 bg-black/20"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-barbershop">Barbearia (opcional)</Label>
+                    <Input
+                      id="register-barbershop-search"
+                      placeholder="Procurar barbearia..."
+                      value={barbershopSearch}
+                      onChange={(event) => setBarbershopSearch(event.target.value)}
+                      className="h-12 rounded-2xl border-white/10 bg-black/20"
+                    />
+                    {barbershopSearch && filteredBarbershops.length > 0 && (
+                      <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-white/10 bg-black/40">
+                        {filteredBarbershops.map((barbershop) => (
+                          <button
+                            key={barbershop.id}
+                            type="button"
+                            className="w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0"
+                            onClick={() => {
+                              setRegisterForm((current) => ({ ...current, barbershopId: barbershop.id }));
+                              setBarbershopSearch("");
+                            }}
+                          >
+                            <div className="font-medium text-white">{barbershop.name}</div>
+                            <div className="text-sm text-zinc-400">{barbershop.address}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {registerForm.barbershopId && (
+                      <div className="mt-2 p-3 rounded-2xl bg-amber-300/10 border border-amber-300/20">
+                        <div className="text-sm text-amber-100">
+                          ✓ Selecionado: {barbershops.find((b) => b.id === registerForm.barbershopId)?.name}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <Button
                     className="h-12 w-full rounded-2xl bg-white text-stone-950 hover:bg-zinc-100"
                     disabled={registerMutation.isPending}
-                    onClick={() => registerMutation.mutate(registerForm)}
+                    onClick={() => registerMutation.mutate({ ...registerForm, barbershopId: registerForm.barbershopId || undefined })}
                   >
                     {registerMutation.isPending ? "A criar conta..." : "Criar conta"}
                   </Button>
@@ -248,51 +293,22 @@ export default function Home() {
                     />
                   </div>
                   <Button
-                    className="h-12 w-full rounded-2xl border border-white/10 bg-transparent text-white hover:bg-white/10"
+                    className="h-12 w-full rounded-2xl bg-amber-300 text-stone-950 hover:bg-amber-200"
                     disabled={recoveryMutation.isPending}
                     onClick={() => recoveryMutation.mutate({ email: recoveryEmail })}
                   >
-                    {recoveryMutation.isPending ? "A preparar recuperação..." : "Gerar pedido de recuperação"}
+                    {recoveryMutation.isPending ? "A processar..." : "Solicitar recuperação"}
                   </Button>
                 </TabsContent>
               </Tabs>
 
-              {feedback ? (
-                <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm leading-7 text-amber-100">
-                  {feedback}
+              {feedback && (
+                <div className="mt-4 p-3 rounded-2xl bg-amber-300/10 border border-amber-300/20">
+                  <p className="text-sm text-amber-100">{feedback}</p>
                 </div>
-              ) : null}
-
-
+              )}
             </CardContent>
           </Card>
-        </section>
-
-        <section className="mt-10 rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm lg:p-8">
-          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Separação funcional</p>
-              <h2 className="mt-3 font-serif text-3xl text-white">Uma experiência distinta para cada perfil.</h2>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="mb-3 flex items-center gap-3 text-amber-200"><ShieldCheck className="h-5 w-5" /> Super Admin</div>
-                <p className="text-sm leading-7 text-zinc-400">Controlo global sobre utilizadores, regras do sistema, serviços e supervisão administrativa.</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="mb-3 flex items-center gap-3 text-amber-200"><Crown className="h-5 w-5" /> Barbeiro Chef</div>
-                <p className="text-sm leading-7 text-zinc-400">Gestão da equipa, horários da operação, catálogo de serviços e visão transversal dos agendamentos.</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="mb-3 flex items-center gap-3 text-amber-200"><Scissors className="h-5 w-5" /> Barbeiro Operacional</div>
-                <p className="text-sm leading-7 text-zinc-400">Acesso à sua agenda, gestão da própria disponibilidade e atualização do estado dos atendimentos.</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="mb-3 flex items-center gap-3 text-amber-200"><Users className="h-5 w-5" /> Cliente</div>
-                <p className="text-sm leading-7 text-zinc-400">Reserva de horários, consulta do histórico e relação clara com serviços e profissionais disponíveis.</p>
-              </div>
-            </div>
-          </div>
         </section>
       </main>
     </div>

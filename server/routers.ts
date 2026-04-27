@@ -1,5 +1,4 @@
-import { randomBytes } from "crypto";
-import { scryptSync } from "crypto";
+import { randomBytes, scryptSync } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, gt, gte, lt, lte, or, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -160,6 +159,7 @@ export const appRouter = router({
           phone: z.string().min(6).max(32),
           email: z.string().email(),
           password: z.string().min(8).max(128),
+          barbershopId: z.string().optional(),
         }),
       )
       .mutation(async ({ input }) => {
@@ -172,6 +172,11 @@ export const appRouter = router({
           throw new TRPCError({ code: "CONFLICT", message: "Já existe uma conta com este e-mail." });
         }
 
+        if (input.barbershopId) {
+          const shop = await getBarbershopById(input.barbershopId);
+          if (!shop) throw new TRPCError({ code: "NOT_FOUND", message: "Barbearia não encontrada." });
+        }
+
         const openId = `local_${nanoid(18)}`;
         await db.insert(users).values({
           openId,
@@ -180,6 +185,7 @@ export const appRouter = router({
           email,
           passwordHash: hashPassword(input.password),
           role: "client",
+          barbershopId: input.barbershopId || null,
         });
 
         return { success: true };
