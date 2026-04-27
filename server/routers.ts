@@ -395,6 +395,9 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
+        console.log("[barbershops.create] Input:", input);
+        console.log("[barbershops.create] User:", ctx.user.id);
+
         const barbershop = await createBarbershop(db, {
           name: input.name,
           phone: input.phone,
