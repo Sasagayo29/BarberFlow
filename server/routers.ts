@@ -287,8 +287,8 @@ export const appRouter = router({
         if (!ctx.res) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
         const updates: Record<string, any> = {};
-        if (input.name) updates.name = input.name.trim();
-        if (input.phone) updates.phone = input.phone.trim();
+        if (input.name !== undefined) updates.name = input.name.trim();
+        if (input.phone !== undefined) updates.phone = input.phone ? input.phone.trim() : null;
 
         if (Object.keys(updates).length === 0) {
           return { success: true };
@@ -296,9 +296,8 @@ export const appRouter = router({
 
         await db.update(users).set(updates).where(eq(users.id, ctx.user.id));
 
-        const updatedUser = await db.query.users.findFirst({
-          where: eq(users.id, ctx.user.id),
-        });
+        // Refetch user para pegar dados atualizados
+        const updatedUser = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1).then(rows => rows[0]);
 
         if (updatedUser) {
           const newToken = await sdk.createSessionToken(updatedUser.openId, { name: updatedUser.name });
