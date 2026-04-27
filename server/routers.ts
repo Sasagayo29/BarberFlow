@@ -280,6 +280,37 @@ export const appRouter = router({
   }),
 
   users: router({
+    list: protectedProcedure
+      .input(
+        z.object({
+          barbershopId: z.number().optional(),
+          role: z.string().optional(),
+          limit: z.number().default(50),
+          offset: z.number().default(0),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        const barbershopId = input.barbershopId || ctx.user.barbershopId;
+        if (!barbershopId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem acesso a barbearia." });
+        }
+
+        const conditions = [eq(users.barbershopId, barbershopId)];
+        if (input.role) {
+          conditions.push(eq(users.role, input.role as any));
+        }
+
+        return await db
+          .select()
+          .from(users)
+          .where(and(...conditions))
+          .limit(input.limit)
+          .offset(input.offset);
+      }),
+
     updateOwnProfile: protectedProcedure
       .input(
         z.object({
@@ -369,7 +400,7 @@ export const appRouter = router({
           phone: input.phone,
           email: input.email,
           address: input.address,
-          ownerId: ctx.user.id,
+          ownerUserId: ctx.user.id,
         });
 
         const chefName = `Chef ${input.name}`;
