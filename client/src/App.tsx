@@ -4,6 +4,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AgendaPage from "./pages/AgendaPage";
 import BarbershopsPage from "./pages/BarbershopsPage";
+import BookingPage from "./pages/BookingPage";
 import ProfilePage from "./pages/ProfilePage";
 import SocialMediaPage from "./pages/SocialMediaPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/barbearias">
         {() => <DashboardShell component={BarbershopsPage} />}
       </Route>
+      <Route path="/booking" component={BookingPage} />
       <Route path="/select-barbershop" component={SelectBarbershopPage} />
       <Route path="/meu-painel" component={ClientDashboard} />
       <Route path="/admin/dados" component={AdminDataManagement} />

@@ -290,3 +290,46 @@ Todas as funcionalidades avançadas foram implementadas e testadas com sucesso:
 - [x] Isolamento de dados por barbershop
 - [x] Pronto para produção
 
+
+## Fase 23: Fluxo de Agendamento com Notificações Twilio (COMPLETO)
+
+### Procedures Implementadas
+- [x] `appointments.create` - Criar agendamento com validação de conflitos
+  - [x] Verificar disponibilidade do barbeiro
+  - [x] Calcular duração do serviço
+  - [x] Detectar conflitos de horário
+  - [x] Enviar notificação SMS/WhatsApp via Twilio
+  - [x] Retornar { success: true } ao sucesso
+
+- [x] `appointments.availability` - Listar horários disponíveis
+  - [x] Buscar horário de trabalho do barbeiro
+  - [x] Calcular slots de 30 minutos
+  - [x] Verificar conflitos com agendamentos existentes
+  - [x] Considerar overrides de disponibilidade
+  - [x] Retornar array de slots com { startAt, available }
+
+### Integração Twilio
+- [x] Importar `sendAppointmentConfirmation` em routers.ts
+- [x] Chamar notificação após criar agendamento
+- [x] Suporte a SMS e WhatsApp
+- [x] Mensagens customizáveis por barbershop
+
+### Frontend Updates
+- [x] BookingPage.tsx atualizado para usar `appointments.availability`
+- [x] Chamada corrigida para `appointments.create` com `startsAt` (timestamp)
+- [x] Renderização de slots disponíveis com status visual
+- [x] Tratamento de horários indisponíveis
+
+### Testes
+- [x] Criado `server/appointments.test.ts` com 3 testes
+- [x] ✅ Teste: Criar agendamento com sucesso
+- [x] ✅ Teste: Listar horários disponíveis
+- [x] ✅ Teste: Retornar slots vazios quando sem horário
+- [x] Todos os testes passando (3/3)
+
+### Qualidade
+- [x] Validações de permissão (barbershopId)
+- [x] Tratamento de erros com CONFLICT para horários ocupados
+- [x] Isolamento de dados por barbershop
+- [x] Testes unitários com mocks de DB
+- [x] Pronto para produção

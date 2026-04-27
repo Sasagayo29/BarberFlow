@@ -6,6 +6,7 @@ import { z } from "zod";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
+import { sendAppointmentConfirmation, sendAppointmentReminder } from "./_core/twilio";
 import { systemRouter } from "./_core/systemRouter";
 import { adminRouter } from "./routers/admin";
 import { analyticsRouter } from "./routers/analytics";
@@ -252,6 +253,31 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    verifyEmail: publicProcedure
+      .input(
+        z.object({
+          token: z.string(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        const tokenRow = await db.query.passwordResetTokens.findFirst({
+          where: eq(passwordResetTokens.token, input.token),
+        });
+
+        if (!tokenRow || tokenRow.expiresAt < new Date()) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Token invalido ou expirado." });
+        }
+
+        await db.update(users).set({ status: "active" }).where(eq(users.id, tokenRow.userId));
+
+        await db.delete(passwordResetTokens).where(eq(passwordResetTokens.id, tokenRow.id));
+
+        return { success: true, message: "Email verificado com sucesso! Sua conta esta ativa." };
+      }),
+
     resetPassword: publicProcedure
       .input(
         z.object({
@@ -385,18 +411,25 @@ export const appRouter = router({
     create: protectedProcedure
       .input(
         z.object({
-          name: z.string().min(3).max(180),
-          phone: z.string().min(6).max(32),
-          email: z.string().email(),
-          address: z.string().min(10).max(500),
-        }),
+          name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(180, "Nome não pode exceder 180 caracteres").trim(),
+          phone: z.string().min(6, "Telefone deve ter pelo menos 6 caracteres").max(32, "Telefone não pode exceder 32 caracteres").trim(),
+          email: z.string().email("Email inválido").trim(),
+          address: z.string().min(10, "Endereço deve ter pelo menos 10 caracteres").max(500, "Endereço não pode exceder 500 caracteres").trim(),
+        }).strict(),
       )
       .mutation(async ({ input, ctx }) => {
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-        console.log("[barbershops.create] Input:", input);
+        console.log("[barbershops.create] Input:", JSON.stringify(input));
         console.log("[barbershops.create] User:", ctx.user.id);
+        console.log("[barbershops.create] Input keys:", Object.keys(input));
+        console.log("[barbershops.create] Input values:", Object.values(input));
+
+        if (!input.name || !input.phone || !input.email || !input.address) {
+          console.error("[barbershops.create] Missing required fields");
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Campos obrigatórios faltando" });
+        }
 
         const barbershop = await createBarbershop(db, {
           name: input.name,
@@ -692,6 +725,237 @@ export const appRouter = router({
         .orderBy(desc(appointments.appointmentDate))
         .limit(50);
     }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          barberUserId: z.number(),
+          serviceId: z.number(),
+          startsAt: z.number(),
+          notes: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        if (!ctx.user.barbershopId) throw new TRPCError({ code: "FORBIDDEN" });
+
+        // Get service details to calculate duration and price
+        const serviceResult = await db
+          .select()
+          .from(services)
+          .leftJoin(barberServices, eq(barberServices.serviceId, services.id))
+          .where(
+            and(
+              eq(services.id, input.serviceId),
+              eq(barberServices.barberUserId, input.barberUserId)
+            )
+          )
+          .limit(1);
+
+        if (!serviceResult || serviceResult.length === 0) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Service not found for this barber" });
+        }
+
+        const service = serviceResult[0].services;
+        const endsAt = input.startsAt + service.durationMinutes * 60 * 1000;
+
+        // Check for conflicts with existing appointments
+        const conflicts = await db
+          .select()
+          .from(appointments)
+          .where(
+            and(
+              eq(appointments.barberUserId, input.barberUserId),
+              or(
+                and(gte(appointments.startsAt, input.startsAt), lt(appointments.startsAt, endsAt)),
+                and(gt(appointments.endsAt, input.startsAt), lte(appointments.endsAt, endsAt)),
+                and(lte(appointments.startsAt, input.startsAt), gte(appointments.endsAt, endsAt))
+              ),
+              or(
+                eq(appointments.status, "pending"),
+                eq(appointments.status, "confirmed")
+              )
+            )
+          );
+
+        if (conflicts.length > 0) {
+          throw new TRPCError({ code: "CONFLICT", message: "Time slot is already booked" });
+        }
+
+        // Create appointment
+        const publicCode = nanoid(10);
+        const result = await db
+          .insert(appointments)
+          .values({
+            barbershopId: ctx.user.barbershopId,
+            publicCode,
+            clientUserId: ctx.user.id,
+            barberUserId: input.barberUserId,
+            serviceId: input.serviceId,
+            status: "pending",
+            startsAt: input.startsAt,
+            endsAt,
+            totalPrice: service.price,
+            notes: input.notes || null,
+          })
+          .returning();
+
+        if (!result || result.length === 0) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create appointment" });
+        }
+
+        const appointment = result[0];
+
+        // Get client and barber details for notifications
+        const clientUser = await db.query.users.findFirst({
+          where: eq(users.id, ctx.user.id),
+        });
+
+        const barberUser = await db.query.users.findFirst({
+          where: eq(users.id, input.barberUserId),
+        });
+
+        const barbershop = await getBarbershopById(ctx.user.barbershopId.toString());
+
+        // Send notifications
+        if (clientUser?.phone) {
+          const appointmentDateTime = new Date(input.startsAt).toLocaleString("pt-PT");
+          await sendAppointmentConfirmation(
+            clientUser.phone,
+            barbershop?.name || "Barbearia",
+            barberUser?.name || "Barbeiro",
+            service.name,
+            appointmentDateTime,
+            "sms"
+          );
+        }
+
+        return { success: true };
+      }),
+
+    availability: protectedProcedure
+      .input(
+        z.object({
+          barberUserId: z.number(),
+          serviceId: z.number(),
+          date: z.string(),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        // Get service details
+        const serviceResult = await db
+          .select()
+          .from(services)
+          .leftJoin(barberServices, eq(barberServices.serviceId, services.id))
+          .where(
+            and(
+              eq(services.id, input.serviceId),
+              eq(barberServices.barberUserId, input.barberUserId)
+            )
+          )
+          .limit(1);
+
+        if (!serviceResult || serviceResult.length === 0) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Service not found for this barber" });
+        }
+
+        const service = serviceResult[0].services;
+
+        // Get business hours for the day
+        const dayOfWeek = new Date(input.date).getDay();
+        const businessHoursResult = await db
+          .select()
+          .from(businessHours)
+          .where(
+            and(
+              eq(businessHours.barberUserId, input.barberUserId),
+              eq(businessHours.weekday, dayOfWeek)
+            )
+          )
+          .limit(1);
+
+        if (!businessHoursResult || businessHoursResult.length === 0) {
+          return { slots: [] };
+        }
+
+        const hours = businessHoursResult[0];
+        if (!hours.isOpen) {
+          return { slots: [] };
+        }
+
+        // Get booked appointments for the day
+        const dateStart = new Date(input.date).getTime();
+        const dateEnd = dateStart + 24 * 60 * 60 * 1000;
+
+        const bookedAppointments = await db
+          .select()
+          .from(appointments)
+          .where(
+            and(
+              eq(appointments.barberUserId, input.barberUserId),
+              gte(appointments.startsAt, dateStart),
+              lt(appointments.startsAt, dateEnd),
+              or(
+                eq(appointments.status, "pending"),
+                eq(appointments.status, "confirmed")
+              )
+            )
+          );
+
+        // Get availability overrides
+        const overrides = await db
+          .select()
+          .from(barberAvailabilityOverrides)
+          .where(
+            and(
+              eq(barberAvailabilityOverrides.barberUserId, input.barberUserId),
+              gte(barberAvailabilityOverrides.startAt, BigInt(dateStart)),
+              lt(barberAvailabilityOverrides.endAt, BigInt(dateEnd))
+            )
+          );
+
+        // Generate available slots
+        const slots = [];
+        const [startHour, startMin] = hours.startTime.split(":").map(Number);
+        const [endHour, endMin] = hours.endTime.split(":").map(Number);
+
+        const dayStart = new Date(input.date);
+        dayStart.setHours(startHour, startMin, 0, 0);
+
+        const dayEnd = new Date(input.date);
+        dayEnd.setHours(endHour, endMin, 0, 0);
+
+        let currentSlotStart = dayStart.getTime();
+        const slotDurationMs = service.durationMinutes * 60 * 1000;
+
+        while (currentSlotStart + slotDurationMs <= dayEnd.getTime()) {
+          const slotEnd = currentSlotStart + slotDurationMs;
+
+          // Check if slot is available
+          const hasConflict = bookedAppointments.some(
+            (apt) => !(apt.endsAt <= currentSlotStart || apt.startsAt >= slotEnd)
+          );
+
+          const hasOverride = overrides.some(
+            (override) =>
+              override.type === "unavailable" &&
+              !(Number(override.endAt) <= currentSlotStart || Number(override.startAt) >= slotEnd)
+          );
+
+          slots.push({
+            startAt: currentSlotStart,
+            available: !hasConflict && !hasOverride,
+          });
+
+          currentSlotStart += 30 * 60 * 1000; // 30-minute intervals
+        }
+
+        return { slots };
+      }),
   }),
 
   settings: router({
