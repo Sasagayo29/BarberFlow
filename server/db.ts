@@ -57,7 +57,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       phone: user.phone ?? null,
       passwordHash: user.passwordHash ?? null,
       loginMethod: user.loginMethod ?? "manus",
-      role: user.role ?? (isOwner ? "super_admin" : "client"),
+      role: user.role ?? "client", // Usar role passado ou padrão client (não sobrescrever role existente)
       status: user.status ?? "active",
       avatarUrl: user.avatarUrl ?? null,
       lastSignedIn: user.lastSignedIn ?? now,
@@ -68,17 +68,20 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     
     if (existing.length > 0) {
       // Atualizar usuário existente
-      await db.update(users).set({
+      const updateData: any = {
         name: values.name,
         phone: values.phone,
         passwordHash: values.passwordHash,
         loginMethod: values.loginMethod,
-        role: values.role,
         status: values.status,
         avatarUrl: values.avatarUrl,
         lastSignedIn: values.lastSignedIn,
-        // NÃO atualizar email se já existe (evita conflito)
-      }).where(eq(users.openId, user.openId));
+      };
+      // Só atualizar role se foi explicitamente passado (não é o padrão)
+      if (user.role !== undefined) {
+        updateData.role = values.role;
+      }
+      await db.update(users).set(updateData).where(eq(users.openId, user.openId));
     } else {
       // Inserir novo usuário
       await db.insert(users).values(values);
