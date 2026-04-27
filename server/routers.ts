@@ -577,6 +577,47 @@ export const appRouter = router({
 
       return await db.select().from(appointments).where(eq(appointments.publicCode, input.barbershopId));
     }),
+
+    listCalendar: protectedProcedure
+      .input(z.object({ startDate: z.date(), endDate: z.date() }).optional())
+      .query(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        if (!ctx.user.barbershopId) throw new TRPCError({ code: "FORBIDDEN" });
+
+        const startDate = input?.startDate || new Date();
+        const endDate = input?.endDate || new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        return await db
+          .select()
+          .from(appointments)
+          .where(
+            and(
+              eq(appointments.barbershopId, ctx.user.barbershopId),
+              gte(appointments.appointmentDate, startDate),
+              lte(appointments.appointmentDate, endDate)
+            )
+          )
+          .orderBy(asc(appointments.appointmentDate));
+      }),
+
+    listHistory: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!ctx.user.barbershopId) throw new TRPCError({ code: "FORBIDDEN" });
+
+      return await db
+        .select()
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.barbershopId, ctx.user.barbershopId),
+            lt(appointments.appointmentDate, new Date())
+          )
+        )
+        .orderBy(desc(appointments.appointmentDate))
+        .limit(50);
+    }),
   }),
 
   settings: router({
