@@ -88,6 +88,29 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     } else {
       // Inserir novo usuário
       await db.insert(users).values(values);
+      
+      // Criar barbershop padrão para novo usuário
+      const newUser = await db.select().from(users).where(eq(users.openId, user.openId)).limit(1);
+      if (newUser.length > 0) {
+        const userId = newUser[0].id;
+        const barbershopName = `${values.name}'s Barbershop`;
+        const newBarbershop = await db.insert(barbershops).values({
+          name: barbershopName,
+          ownerUserId: userId,
+          phone: values.phone || "",
+          email: values.email || "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          country: "PT",
+        }).returning();
+        
+        if (newBarbershop.length > 0) {
+          // Atualizar usuário com barbershopId
+          await db.update(users).set({ barbershopId: newBarbershop[0].id }).where(eq(users.id, userId));
+        }
+      }
     }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);

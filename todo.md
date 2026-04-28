@@ -333,3 +333,33 @@ Todas as funcionalidades avançadas foram implementadas e testadas com sucesso:
 - [x] Isolamento de dados por barbershop
 - [x] Testes unitários com mocks de DB
 - [x] Pronto para produção
+
+
+## Fase 24: Correção de Erros 403 FORBIDDEN - Barbershop Padrão (COMPLETO)
+
+### Problema Identificado
+- [x] Usuários criados via OAuth não tinham `barbershopId` atribuído
+- [x] Isso causava erro 403 FORBIDDEN em todas as procedures que verificam `ctx.user.barbershopId`
+- [x] Erros de validação Zod com parâmetros `undefined`
+
+### Solução Implementada
+- [x] Modificado `upsertUser` em `server/db.ts` para criar barbershop padrão
+- [x] Quando novo usuário é criado, uma barbershop padrão é criada automaticamente
+- [x] Usuário é atualizado com o `barbershopId` da barbershop criada
+- [x] Usuários existentes não são afetados (apenas update de campos específicos)
+
+### Fluxo de Criação
+1. Usuário faz login via OAuth
+2. `upsertUser` é chamado com dados do OAuth
+3. Se usuário não existe:
+   - Usuário é inserido
+   - Barbershop padrão é criada com nome "{name}'s Barbershop"
+   - Usuário é atualizado com `barbershopId` da barbershop
+4. Se usuário já existe:
+   - Apenas campos específicos são atualizados (sem criar barbershop)
+
+### Qualidade
+- [x] Sem erros adicionais de TypeScript
+- [x] Isolamento de dados por barbershop garantido
+- [x] Fluxo de OAuth melhorado
+- [x] Pronto para produção
